@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description"
+    content="BA Division Resource Tracking Dashboard - Manage team capacity, project assignments, and skills matrix">
+  <title>BA Resource Tracker</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@latest/font/lucide.min.css">
+  <script type="module" src="/src/main.js"></script>
+</head>
+
+<body>
+
+  <!-- ===== AUTH SECTION ===== -->
+  <div id="authSection" class="auth-container">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <div class="logo-icon">RT</div>
+        <h1 id="authTitle">Welcome Back</h1>
+        <p id="authSubtitle">Sign in to your account</p>
+      </div>
+      <div class="auth-error" id="authError"></div>
+      <form class="auth-form" id="authForm">
+        <div class="form-group hidden" id="authNameGroup">
+          <label>Full Name</label>
+          <input type="text" id="authFullName" placeholder="Your full name">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="authEmail" placeholder="you@company.com" required>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="authPassword" placeholder="Enter your password" required minlength="6">
+        </div>
+        <button type="submit" class="btn btn-primary" id="authSubmitBtn">Sign In</button>
+      </form>
+      <div class="auth-toggle">
+        <span id="authToggleText">Don't have an account? </span>
+        <a id="authToggleLink">Sign Up</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== APP SECTION ===== -->
+  <div id="appSection" class="app-layout hidden">
+    <!-- Mobile Toggle -->
+    <button class="mobile-toggle" id="mobileToggle">
+      <i class="icon-menu"></i>
+    </button>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div class="logo-icon">RT</div>
+          <div class="logo-text">
+            <span class="logo-title">Resource Tracker</span>
+            <span class="logo-subtitle">BA Division</span>
+          </div>
+        </div>
+      </div>
+      <nav class="sidebar-nav" id="sidebarNav">
+        <div class="nav-item active" data-view="dashboard">
+          <i class="icon-layout-dashboard"></i> Dashboard
+        </div>
+        <div class="nav-item" data-view="members">
+          <i class="icon-users"></i> Team Members
+        </div>
+        <div class="nav-item" data-view="projects">
+          <i class="icon-folder-kanban"></i> Project Assignments
+        </div>
+        <div class="nav-item" data-view="capacity">
+          <i class="icon-bar-chart-3"></i> Capacity Planner
+        </div>
+        <div class="nav-item" data-view="skills">
+          <i class="icon-grid-3x3"></i> Skills Matrix
+        </div>
+        <div class="nav-item" data-view="users" style="display:none">
+          <i class="icon-shield"></i> User Management
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-info">
+          <div class="user-avatar" id="currentUserAvatar">U</div>
+          <div class="user-details">
+            <span class="user-name" id="currentUserName">User</span>
+            <span class="user-role" id="currentUserRole">member</span>
+          </div>
+          <button class="logout-btn" id="logoutBtn" title="Sign Out">
+            <i class="icon-log-out"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+      <!-- ===== DASHBOARD ===== -->
+      <section class="view active" id="view-dashboard">
+        <div class="main-header">
+          <div>
+            <h1>Dashboard</h1>
+            <p class="header-subtitle">Resource utilization overview</p>
+          </div>
+        </div>
+        <div class="stats-grid" id="statsGrid"></div>
+        <div class="dashboard-grid">
+          <div class="glass-card">
+            <div class="section-title"><i class="icon-bar-chart-3"></i> Team Utilization</div>
+            <div class="utilization-list" id="utilizationList"></div>
+          </div>
+          <div class="glass-card">
+            <div class="section-title"><i class="icon-folder-kanban"></i> Active Projects</div>
+            <div class="project-list" id="activeProjectList"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== TEAM MEMBERS ===== -->
+      <section class="view" id="view-members">
+        <div class="main-header">
+          <div>
+            <h1>Team Members</h1>
+            <p class="header-subtitle">Manage your BA division team</p>
+          </div>
+          <div class="header-actions">
+            <div class="search-box">
+              <i class="icon-search"></i>
+              <input type="text" placeholder="Search members..." id="memberSearch">
+            </div>
+            <button class="btn btn-primary" id="addMemberBtn">
+              <i class="icon-plus"></i> Add Member
+            </button>
+          </div>
+        </div>
+        <div class="glass-card">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Utilization</th>
+                  <th>Skills</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="membersTableBody"></tbody>
+            </table>
+          </div>
+          <div class="empty-state" id="membersEmpty" style="display:none;">
+            <i class="icon-users"></i>
+            <h3>No team members yet</h3>
+            <p>Add your first team member to get started</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== PROJECTS ===== -->
+      <section class="view" id="view-projects">
+        <div class="main-header">
+          <div>
+            <h1>Project Assignments</h1>
+            <p class="header-subtitle">Track project allocations and assignments</p>
+          </div>
+          <div class="header-actions">
+            <div class="search-box">
+              <i class="icon-search"></i>
+              <input type="text" placeholder="Search projects..." id="projectSearch">
+            </div>
+            <button class="btn btn-primary" id="addProjectBtn">
+              <i class="icon-plus"></i> Add Project
+            </button>
+          </div>
+        </div>
+        <div class="glass-card">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Project</th>
+                  <th>Priority</th>
+                  <th>Status</th>
+                  <th>Assigned Members</th>
+                  <th>Start Date</th>
+                  <th>End Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="projectsTableBody"></tbody>
+            </table>
+          </div>
+          <div class="empty-state" id="projectsEmpty" style="display:none;">
+            <i class="icon-folder-kanban"></i>
+            <h3>No projects yet</h3>
+            <p>Add your first project to start tracking</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== CAPACITY ===== -->
+      <section class="view" id="view-capacity">
+        <div class="main-header">
+          <div>
+            <h1>Capacity Planner</h1>
+            <p class="header-subtitle">Visualize workload distribution across team</p>
+          </div>
+        </div>
+        <div class="capacity-grid" id="capacityGrid"></div>
+        <div class="empty-state" id="capacityEmpty" style="display:none;">
+          <i class="icon-bar-chart-3"></i>
+          <h3>No capacity data</h3>
+          <p>Add team members and project assignments first</p>
+        </div>
+      </section>
+
+      <!-- ===== SKILLS MATRIX ===== -->
+      <section class="view" id="view-skills">
+        <div class="main-header">
+          <div>
+            <h1>Skills Matrix</h1>
+            <p class="header-subtitle">Map team competencies and proficiency levels</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn btn-secondary" id="saveSkillsBtn"><i class="icon-save"></i> Save Changes</button>
+          </div>
+        </div>
+        <div class="glass-card">
+          <div class="matrix-container">
+            <table class="matrix-table">
+              <thead id="skillsMatrixHead"></thead>
+              <tbody id="skillsMatrixBody"></tbody>
+            </table>
+          </div>
+          <div class="empty-state" id="skillsEmpty" style="display:none;">
+            <i class="icon-grid-3x3"></i>
+            <h3>No skills data</h3>
+            <p>Add team members first to build the skills matrix</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== USER MANAGEMENT ===== -->
+      <section class="view" id="view-users">
+        <div class="main-header">
+          <div>
+            <h1>User Management</h1>
+            <p class="header-subtitle">Manage accounts and roles</p>
+          </div>
+        </div>
+        <div class="glass-card">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Role</th>
+                  <th>Joined</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="usersTableBody"></tbody>
+            </table>
+          </div>
+          <div class="empty-state" id="usersEmpty" style="display:none;">
+            <i class="icon-shield"></i>
+            <h3>No users</h3>
+            <p>Users will appear here after they register</p>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ===== MEMBER MODAL ===== -->
+  <div class="modal-overlay" id="memberModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="memberModalTitle">Add Member</h2>
+        <button class="modal-close"
+          onclick="document.getElementById('memberModal').classList.remove('active')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="memberId">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="memberName" placeholder="e.g. Ahmad Rizki">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Role</label>
+            <select id="memberRole">
+              <option value="Senior BA">Senior BA</option>
+              <option value="BA">Business Analyst</option>
+              <option value="Junior BA">Junior BA</option>
+              <option value="Intern">Intern</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select id="memberStatus">
+              <option value="Available">Available</option>
+              <option value="Assigned">Assigned</option>
+              <option value="On Leave">On Leave</option>
+              <option value="Training">Training</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="memberEmail" placeholder="email@company.com">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary"
+          onclick="document.getElementById('memberModal').classList.remove('active')">Cancel</button>
+        <button class="btn btn-primary" id="saveMemberBtn">Save Member</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PROJECT MODAL ===== -->
+  <div class="modal-overlay" id="projectModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="projectModalTitle">Add Project</h2>
+        <button class="modal-close"
+          onclick="document.getElementById('projectModal').classList.remove('active')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="projectId">
+        <div class="form-group">
+          <label>Project Name</label>
+          <input type="text" id="projectName" placeholder="e.g. Core Banking Revamp">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Priority</label>
+            <select id="projectPriority">
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Low">Low</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select id="projectStatus">
+              <option value="Active">Active</option>
+              <option value="Planning">Planning</option>
+              <option value="On Hold">On Hold</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Start Date</label>
+            <input type="date" id="projectStart">
+          </div>
+          <div class="form-group">
+            <label>End Date</label>
+            <input type="date" id="projectEnd">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Assign Members</label>
+          <div class="checkbox-group" id="memberCheckboxes"></div>
+        </div>
+        <div class="form-group" id="allocationSection" style="display:none;">
+          <label>Allocation per Member (%)</label>
+          <div class="allocation-inputs" id="allocationInputs"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary"
+          onclick="document.getElementById('projectModal').classList.remove('active')">Cancel</button>
+        <button class="btn btn-primary" id="saveProjectBtn">Save Project</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== USER ROLE MODAL ===== -->
+  <div class="modal-overlay" id="userRoleModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Change User Role</h2>
+        <button class="modal-close"
+          onclick="document.getElementById('userRoleModal').classList.remove('active')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="userRoleId">
+        <p style="margin-bottom:16px;font-size:14px;">Changing role for: <strong id="userRoleName"></strong></p>
+        <div class="form-group">
+          <label>Role</label>
+          <select id="userRoleSelect">
+            <option value="admin">Admin</option>
+            <option value="head">Head</option>
+            <option value="member">Member</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary"
+          onclick="document.getElementById('userRoleModal').classList.remove('active')">Cancel</button>
+        <button class="btn btn-primary" id="saveUserRoleBtn">Save Role</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+</body>
+
+</html>

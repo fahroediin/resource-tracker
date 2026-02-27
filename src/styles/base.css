@@ -1,0 +1,118 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+    /* Core palette */
+    --color-sage: #A2CB8B;
+    --color-sage-light: #b8d9a5;
+    --color-sage-dark: #7fb366;
+    --color-sage-muted: rgba(162, 203, 139, 0.15);
+    --color-sage-glow: rgba(162, 203, 139, 0.25);
+
+    --color-cream: #FFFBF1;
+    --color-cream-muted: rgba(255, 251, 241, 0.7);
+    --color-cream-dim: rgba(255, 251, 241, 0.45);
+
+    --color-navy: #25343F;
+    --color-navy-light: #2f4250;
+    --color-navy-lighter: #3a5060;
+    --color-navy-dark: #1b2730;
+    --color-navy-darker: #131d24;
+
+    /* Semantic tokens */
+    --bg-primary: var(--color-navy-darker);
+    --bg-secondary: var(--color-navy-dark);
+    --bg-gradient: linear-gradient(135deg, #131d24 0%, #25343F 50%, #1b2730 100%);
+    --glass-bg: rgba(37, 52, 63, 0.5);
+    --glass-border: rgba(162, 203, 139, 0.1);
+    --glass-hover: rgba(162, 203, 139, 0.06);
+
+    --accent-primary: var(--color-sage);
+    --accent-secondary: #6bc5d2;
+    --accent-amber: #f0c050;
+    --accent-rose: #e8636f;
+    --accent-purple: #a87fd4;
+
+    --text-primary: var(--color-cream);
+    --text-secondary: var(--color-cream-muted);
+    --text-muted: var(--color-cream-dim);
+
+    /* Layout */
+    --sidebar-width: 260px;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-lg: 16px;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg-gradient);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(162, 203, 139, 0.15);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(162, 203, 139, 0.3);
+}
+
+.app-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.view {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.view.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.hidden {
+    display: none !important;
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 0 !important;
+        padding: 20px !important;
+    }
+
+    .mobile-toggle {
+        display: flex !important;
+    }
+}
