@@ -105,6 +105,12 @@ async function showApp() {
     document.getElementById('authSection').classList.add('hidden');
     document.getElementById('appSection').classList.remove('hidden');
 
+    // Show pending approval banner for member role
+    const banner = document.getElementById('approvalBanner');
+    if (banner) {
+        banner.classList.toggle('hidden', user.profile?.role !== 'member');
+    }
+
     // Seed data if needed
     try {
         await seedIfEmpty();

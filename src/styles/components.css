@@ -6,6 +6,24 @@
     min-height: 100vh;
 }
 
+.approval-banner {
+    background: rgba(240, 192, 80, 0.1);
+    border: 1px solid rgba(240, 192, 80, 0.25);
+    border-radius: var(--radius-sm);
+    padding: 12px 18px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--accent-amber);
+}
+
+.approval-banner i {
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
 .main-header {
     display: flex;
     justify-content: space-between;

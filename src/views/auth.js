@@ -36,7 +36,7 @@ function updateAuthUI() {
         toggleLink.textContent = 'Sign Up';
     } else {
         title.textContent = 'Create Account';
-        subtitle.textContent = 'Register a new account';
+        subtitle.textContent = 'Your account will need admin approval to edit data';
         nameGroup.classList.remove('hidden');
         submitBtn.textContent = 'Sign Up';
         toggleText.textContent = 'Already have an account? ';
