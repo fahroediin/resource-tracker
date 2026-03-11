@@ -1,7 +1,7 @@
 import './styles/index.css';
 import { getCurrentUser, onAuthStateChange, signOut } from './lib/auth.js';
 import { seedIfEmpty } from './lib/store.js';
-import { switchView, registerViewRenderer, setCurrentUserProfile, getInitials, showToast, toggleSidebar, closeModal } from './lib/ui.js';
+import { switchView, registerViewRenderer, setCurrentUserProfile, getInitials, showToast, toggleSidebar, closeModal, loadDivisionSettings } from './lib/ui.js';
 import { initAuthView } from './views/auth.js';
 import { renderDashboard } from './views/dashboard.js';
 import { renderMembers, initMembersView } from './views/members.js';
@@ -9,6 +9,8 @@ import { renderProjects, initProjectsView } from './views/projects.js';
 import { renderCapacity } from './views/capacity.js';
 import { renderSkillsMatrix, initSkillsView } from './views/skills.js';
 import { renderUsers, initUsersView } from './views/users.js';
+import { renderSettings, initSettingsView } from './views/settings.js';
+import { renderSuperadmin, initSuperadminView } from './views/superadmin.js';
 
 // Register view renderers
 registerViewRenderer('dashboard', renderDashboard);
@@ -17,6 +19,8 @@ registerViewRenderer('projects', renderProjects);
 registerViewRenderer('capacity', renderCapacity);
 registerViewRenderer('skills', renderSkillsMatrix);
 registerViewRenderer('users', renderUsers);
+registerViewRenderer('settings', renderSettings);
+registerViewRenderer('superadmin', renderSuperadmin);
 
 // ===== APP INIT =====
 
@@ -27,6 +31,8 @@ async function initApp() {
     initProjectsView();
     initSkillsView();
     initUsersView();
+    initSettingsView();
+    initSuperadminView();
 
     // Bind sidebar nav
     document.querySelectorAll('.nav-item[data-view]').forEach(item => {
@@ -102,6 +108,7 @@ async function showApp() {
     if (!user) return showAuth();
 
     setCurrentUserProfile(user.profile);
+    await loadDivisionSettings();
 
     // Update sidebar user info
     const userName = document.getElementById('currentUserName');
@@ -117,6 +124,20 @@ async function showApp() {
     if (usersNav) {
         const canSeeUsers = user.profile?.role === 'admin' || user.profile?.role === 'head';
         usersNav.style.display = canSeeUsers ? '' : 'none';
+    }
+
+    // Show/hide Settings nav based on role
+    const settingsNav = document.querySelector('.nav-item[data-view="settings"]');
+    if (settingsNav) {
+        const canSeeSettings = user.profile?.role === 'admin' || user.profile?.role === 'head' || user.profile?.role === 'superadmin';
+        settingsNav.style.display = canSeeSettings ? '' : 'none';
+    }
+
+    // Show/hide Superadmin nav based on role
+    const superadminNav = document.querySelector('.nav-item[data-view="superadmin"]');
+    if (superadminNav) {
+        const canSeeSuperadmin = user.profile?.role === 'superadmin';
+        superadminNav.style.display = canSeeSuperadmin ? '' : 'none';
     }
     const appSection = document.getElementById('appSection');
     const isFirstLoad = appSection.classList.contains('hidden');

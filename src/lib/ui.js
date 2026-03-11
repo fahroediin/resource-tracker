@@ -1,3 +1,5 @@
+import { fetchDivisionSettings } from './store.js';
+
 const AVATAR_COLORS = [
     'linear-gradient(135deg, #FFFFFF, #C0C0C0)',
     'linear-gradient(135deg, #D0D0D0, #A0A0A0)',
@@ -40,7 +42,7 @@ export function getBarColor(pct) {
 
 export function getMemberUtilization(memberId, projects) {
     let total = 0;
-    const activePhases = ['Doc Creation', 'Design Review', 'Development'];
+    const activePhases = currentDivisionSettings?.capacity_active_phases || ['Doc Creation', 'Design Review', 'Development'];
     for (const p of projects) {
         if (p.status !== 'Active' || !activePhases.includes(p.phase)) continue;
         const assignment = (p.project_assignments || []).find(a => a.member_id === memberId);
@@ -122,5 +124,17 @@ export function canEdit() {
 }
 
 export function isAdmin() {
-    return currentUserProfile?.role === 'admin';
+    return currentUserProfile?.role === 'admin' || currentUserProfile?.role === 'superadmin';
+}
+
+export let currentDivisionSettings = null;
+
+export async function loadDivisionSettings() {
+    if (!currentUserProfile || currentUserProfile.role === 'superadmin') {
+        currentDivisionSettings = null;
+        return;
+    }
+    if (currentUserProfile.division_id) {
+        currentDivisionSettings = await fetchDivisionSettings(currentUserProfile.division_id);
+    }
 }

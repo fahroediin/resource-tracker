@@ -86,6 +86,12 @@
         <div class="nav-item" data-view="users" style="display:none">
           <i class="icon-shield"></i> User Management
         </div>
+        <div class="nav-item" data-view="settings" style="display:none">
+          <i class="icon-settings"></i> Division Settings
+        </div>
+        <div class="nav-item" data-view="superadmin" style="display:none">
+          <i class="icon-globe"></i> Tenant Management
+        </div>
       </nav>
       <div class="sidebar-footer">
         <div class="user-info">
@@ -340,6 +346,49 @@
         </div>
       </section>
 
+      <!-- ===== DIVISION SETTINGS ===== -->
+      <section class="view" id="view-settings">
+        <div class="main-header">
+          <div>
+            <h1>Division Settings</h1>
+            <p class="header-subtitle">Manage project phases, statuses, and matrix skills</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn btn-secondary" id="saveDivisionSettingsBtn"><i class="icon-save"></i> Save Settings</button>
+          </div>
+        </div>
+        <div class="settings-grid" id="settingsContainer">
+          <!-- Dynamically populated in settings.js -->
+        </div>
+      </section>
+
+      <!-- ===== TENANT MANAGEMENT (SUPER ADMIN) ===== -->
+      <section class="view" id="view-superadmin">
+        <div class="main-header">
+          <div>
+            <h1>Tenant Management</h1>
+            <p class="header-subtitle">Manage divisions and assign Heads</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn btn-primary" id="createDivisionBtn"><i class="icon-plus"></i> New Division</button>
+          </div>
+        </div>
+        <div class="glass-card">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Division Name</th>
+                  <th>Created At</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="divisionsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
     </main>
   </div>
 
@@ -432,23 +481,13 @@
           <div class="form-group">
             <label>Status</label>
             <select id="projectStatus">
-              <option value="Active">Active</option>
-              <option value="On Hold">On Hold</option>
-              <option value="Completed">Completed</option>
+              <!-- Dynamically populated -->
             </select>
           </div>
           <div class="form-group">
             <label>Phase</label>
             <select id="projectPhase">
-              <option value="Planning">Planning</option>
-              <option value="Requirement Gathering">Requirement Gathering</option>
-              <option value="Design">Design</option>
-              <option value="Design Review">Design Review</option>
-              <option value="Doc Creation">Doc Creation</option>
-              <option value="Development">Development</option>
-              <option value="SIT">SIT</option>
-              <option value="UAT">UAT</option>
-              <option value="Go Live">Go Live</option>
+              <!-- Dynamically populated -->
             </select>
           </div>
         </div>

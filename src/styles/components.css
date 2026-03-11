@@ -108,6 +108,35 @@
     justify-content: center;
 }
 
+/* ===== PAGINATION BUTTONS ===== */
+.pagination-btn {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm);
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.pagination-btn:hover {
+    background: var(--glass-hover);
+    color: var(--text-primary);
+}
+
+.pagination-btn.active {
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
+    border: none;
+    font-weight: 700;
+}
+
 /* ===== CARDS ===== */
 .glass-card {
     background: var(--glass-bg);
@@ -699,4 +728,53 @@ tbody tr:last-child td {
         margin: 16px;
         max-height: calc(100vh - 32px);
     }
+}
+
+/* ===== SETTINGS VIEW ===== */
+.settings-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.settings-tags-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 40px;
+    padding: 8px 0;
+}
+
+.settings-tag-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 4px 12px 4px 14px;
+    font-size: 13px;
+    color: var(--text-primary);
+    transition: border-color 0.2s;
+}
+
+.settings-tag-item:hover {
+    border-color: var(--text-secondary);
+}
+
+.settings-tag-remove {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    transition: color 0.2s;
+}
+
+.settings-tag-remove:hover {
+    color: var(--text-primary);
 }

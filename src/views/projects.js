@@ -1,5 +1,5 @@
 import { fetchMembers, fetchProjects, createProject, updateProject, deleteProject as deleteProjectStore } from '../lib/store.js';
-import { showToast, openModal, closeModal, canEdit } from '../lib/ui.js';
+import { showToast, openModal, closeModal, canEdit, currentDivisionSettings } from '../lib/ui.js';
 
 let currentTypeFilter = 'all';
 let currentStatusFilter = 'all';
@@ -63,9 +63,14 @@ export async function renderProjects() {
         // Render table rows
         tbody.innerHTML = paginatedProjects.map(p => {
             const priorityCls = p.priority === 'High' ? 'priority-high' : p.priority === 'Medium' ? 'priority-medium' : 'priority-low';
-            const statusMap = { 'Active': 'badge-active', 'Planning': 'badge-planning', 'On Hold': 'badge-onhold', 'Completed': 'badge-completed' };
             const typeMap = { 'Internal': 'badge-internal', 'External': 'badge-external', 'POC': 'badge-poc' };
-            const phaseMap = { 'Pembuatan Dokumen': '#e6e6e6', 'Development': '#d0d0d0', 'SIT': '#b0b0b0', 'UAT': '#909090', 'Go Live': '#707070' };
+            
+            // Dynamic Status
+            const statuses = currentDivisionSettings?.statuses || [];
+            const statusObj = statuses.find(s => s.name === p.status);
+            // Fallback to a generic badge style if color not matching a CSS class
+            const statusBadgeCls = statusObj ? `badge-${statusObj.name.toLowerCase().replace(/\s+/g, '')}` : 'badge-planning';
+
             const assignedMembers = (p.project_assignments || []).map(a => {
                 const m = members.find(mm => mm.id === a.member_id);
                 return m ? `${m.name} (${a.allocation}%)` : null;
@@ -96,9 +101,9 @@ export async function renderProjects() {
           <td style="font-weight:600">${p.name} ${warningHtml}</td>
           <td style="color:var(--text-secondary);font-size:12px;">${p.client_name || '—'}</td>
           <td><span class="badge ${typeMap[p.type] || 'badge-internal'}">${p.type || 'Internal'}</span></td>
-          <td><span class="badge" style="background:${phaseMap[p.phase] || '#e6e6e6'};color:#000;">${p.phase || 'Pembuatan Dokumen'}</span></td>
+          <td><span class="badge" style="background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--glass-border);">${p.phase || 'Planning'}</span></td>
           <td><div style="display:flex;align-items:center;gap:8px"><div class="project-priority ${priorityCls}"></div>${p.priority}</div></td>
-          <td><span class="badge ${statusMap[p.status] || ''}">${p.status}</span></td>
+          <td><span class="badge ${statusBadgeCls}" style="${!statusObj ? 'background:var(--bg-secondary);color:var(--text-primary);' : ''}">${p.status}</span></td>
           <td>
             <div class="skill-tags">${assignedMembers.map(n => `<span class="skill-tag">${n}</span>`).join('') || '<span style="color:var(--text-muted);font-size:11px">Unassigned</span>'}</div>
           </td>
@@ -174,12 +179,22 @@ export async function initProjectsView() {
         renderProjects();
     });
 
-    // Status Filter Dropdown
-    document.getElementById('projectStatusFilterDropdown')?.addEventListener('change', (e) => {
-        currentStatusFilter = e.target.value;
-        currentPage = 1; // Reset to page 1 on filter
-        renderProjects();
-    });
+    // Status Filter Dropdown Setup
+    const statusDropdown = document.getElementById('projectStatusFilterDropdown');
+    if (statusDropdown) {
+        let statusHtml = '<option value="all">All Statuses</option>';
+        const statuses = currentDivisionSettings?.statuses || [];
+        statuses.forEach(s => {
+            statusHtml += `<option value="${s.name}">${s.name}</option>`;
+        });
+        statusDropdown.innerHTML = statusHtml;
+
+        statusDropdown.addEventListener('change', (e) => {
+            currentStatusFilter = e.target.value;
+            currentPage = 1; // Reset to page 1 on filter
+            renderProjects();
+        });
+    }
 
     // Search input
     document.getElementById('projectSearch')?.addEventListener('input', () => {
@@ -223,8 +238,18 @@ async function openProjectModal(project = null) {
     document.getElementById('projectClient').value = project ? (project.client_name || '') : '';
     document.getElementById('projectType').value = project ? (project.type || 'Internal') : 'Internal';
     document.getElementById('projectPriority').value = project ? project.priority : 'Medium';
-    document.getElementById('projectStatus').value = project ? project.status : 'Active';
-    document.getElementById('projectPhase').value = project ? (project.phase || 'Pembuatan Dokumen') : 'Pembuatan Dokumen';
+
+    // Populate Dynamic Options
+    const phaseSelect = document.getElementById('projectPhase');
+    const statusSelect = document.getElementById('projectStatus');
+    const settings = currentDivisionSettings || { phases: [], statuses: [] };
+
+    phaseSelect.innerHTML = settings.phases.map(p => `<option value="${p}">${p}</option>`).join('');
+    statusSelect.innerHTML = settings.statuses.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+
+    document.getElementById('projectStatus').value = project ? project.status : (settings.statuses[0]?.name || 'Active');
+    document.getElementById('projectPhase').value = project ? (project.phase || '') : (settings.phases[0] || 'Planning');
+    
     document.getElementById('projectStart').value = project ? (project.start_date || '') : '';
     document.getElementById('projectEnd').value = project ? (project.end_date || '') : '';
 

@@ -1,5 +1,5 @@
 import { supabase } from './supabase.js';
-
+import { getCurrentUserProfile } from './ui.js';
 const SKILL_LIST = [
     'Requirements Gathering',
     'Stakeholder Management',
@@ -27,6 +27,9 @@ export async function fetchMembers() {
 }
 
 export async function createMember(member) {
+    const profile = getCurrentUserProfile();
+    if (profile?.division_id) member.division_id = profile.division_id;
+
     const { data, error } = await supabase
         .from('members')
         .insert(member)
@@ -74,6 +77,9 @@ export async function fetchProjects() {
 }
 
 export async function createProject(project, assignments) {
+    const profile = getCurrentUserProfile();
+    if (profile?.division_id) project.division_id = profile.division_id;
+
     const { data, error } = await supabase
         .from('projects')
         .insert(project)
@@ -195,9 +201,68 @@ export async function deleteProfile(id) {
 // ===== ACTIVITY LOG =====
 
 export async function logActivity(userId, action, entityType, entityId) {
+    const profile = getCurrentUserProfile();
     await supabase
         .from('activity_log')
-        .insert({ user_id: userId, action, entity_type: entityType, entity_id: entityId });
+        .insert({ 
+            division_id: profile?.division_id || null,
+            user_id: userId, 
+            action, 
+            entity_type: entityType, 
+            entity_id: entityId 
+        });
+}
+
+// ===== SETTINGS & DIVISIONS =====
+
+export async function fetchDivisionSettings(divisionId) {
+    if (!divisionId) return null;
+    const { data, error } = await supabase
+        .from('division_settings')
+        .select('*')
+        .eq('division_id', divisionId)
+        .maybeSingle();
+
+    if (error && error.code !== 'PGRST116') throw error; // ignore no rows
+    return data;
+}
+
+export async function updateDivisionSettings(divisionId, settings) {
+    const { data, error } = await supabase
+        .from('division_settings')
+        .upsert({ division_id: divisionId, ...settings }, { onConflict: 'division_id' })
+        .select()
+        .single();
+    if (error) throw error;
+    return data;
+}
+
+export async function fetchAllDivisions() {
+    const { data, error } = await supabase
+        .from('divisions')
+        .select('*')
+        .order('name');
+    if (error) throw error;
+    return data;
+}
+
+export async function createDivision(name) {
+    const { data, error } = await supabase
+        .from('divisions')
+        .insert({ name })
+        .select()
+        .single();
+    if (error) throw error;
+
+    // Seed default settings for the new division
+    await updateDivisionSettings(data.id, {
+        phases: ["Planning", "Requirement Gathering", "Design", "Design Review", "Doc Creation", "Development", "SIT", "UAT", "Go Live"],
+        statuses: [{ "name": "Active", "color": "blue" }, { "name": "On Hold", "color": "orange" }, { "name": "Completed", "color": "green" }],
+        capacity_active_phases: ["Doc Creation", "Design Review", "Development"],
+        skills: ["Communication", "Documentation"]
+    });
+
+    return data;
 }
 
 // ===== SEED DATA =====

@@ -1,5 +1,5 @@
 import { fetchMembers, fetchProjects } from '../lib/store.js';
-import { getInitials, getAvatarColor, getMemberUtilization, getCapacityStatus, getBarColor } from '../lib/ui.js';
+import { getInitials, getAvatarColor, getMemberUtilization, getUtilClass, getCapacityStatus, getBarColor, currentDivisionSettings } from '../lib/ui.js';
 
 export async function renderCapacity() {
     try {
@@ -20,7 +20,7 @@ export async function renderCapacity() {
             const status = getCapacityStatus(util);
             const barColor = getBarColor(util);
 
-            const activePhases = ['Doc Creation', 'Design Review', 'Development'];
+            const activePhases = currentDivisionSettings?.capacity_active_phases || ['Doc Creation', 'Design Review', 'Development'];
             const assignedProjects = projects
                 .filter(p => p.status === 'Active' && activePhases.includes(p.phase) && (p.project_assignments || []).some(a => a.member_id === m.id))
                 .map(p => {
