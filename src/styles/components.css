@@ -65,13 +65,13 @@
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #FFFFFF, #C0C0C0);
-    color: var(--color-black);
-    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.15);
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
+    box-shadow: var(--btn-primary-shadow);
 }
 
 .btn-primary:hover {
-    box-shadow: 0 6px 25px rgba(255, 255, 255, 0.25);
+    box-shadow: var(--btn-primary-shadow-hover);
     transform: translateY(-1px);
 }
 

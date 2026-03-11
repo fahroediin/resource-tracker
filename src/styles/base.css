@@ -43,6 +43,12 @@
     --radius-sm: 8px;
     --radius-lg: 16px;
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Buttons */
+    --btn-primary-bg: linear-gradient(135deg, #FFFFFF, #C0C0C0);
+    --btn-primary-text: #0D0D0D;
+    --btn-primary-shadow: 0 4px 15px rgba(255, 255, 255, 0.15);
+    --btn-primary-shadow-hover: 0 6px 25px rgba(255, 255, 255, 0.25);
 }
 
 /* Light Theme overrides */
@@ -80,6 +86,12 @@
     --text-primary: #111111;
     --text-secondary: rgba(0, 0, 0, 0.7);
     --text-muted: rgba(0, 0, 0, 0.4);
+
+    /* Buttons */
+    --btn-primary-bg: linear-gradient(135deg, #1A1A1A, #0D0D0D);
+    --btn-primary-text: #FFFFFF;
+    --btn-primary-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    --btn-primary-shadow-hover: 0 6px 25px rgba(0, 0, 0, 0.3);
 }
 
 * {
