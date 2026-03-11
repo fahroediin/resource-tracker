@@ -191,19 +191,29 @@
             <p class="header-subtitle">Track project allocations and assignments</p>
           </div>
           <div class="header-actions" style="flex-wrap: wrap; justify-content: flex-end;">
-            <div class="filter-tabs" id="projectTypeFilterTabs" style="margin-right: 8px;">
-              <span style="font-size:11px;color:var(--text-muted);align-self:center;margin-right:4px;">Type:</span>
-              <button class="filter-tab active" data-filter="all">All</button>
-              <button class="filter-tab" data-filter="Internal">Internal</button>
-              <button class="filter-tab" data-filter="External">External</button>
-              <button class="filter-tab" data-filter="POC">POC</button>
+            <div class="filter-dropdown" style="display: flex; align-items: center; margin-right: 8px;">
+              <span style="font-size:11px;color:var(--text-muted);margin-right:4px;">Type:</span>
+              <select id="projectTypeFilterDropdown" style="padding: 6px 10px; font-size: 12px; background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border); color: var(--text-primary); border-radius: var(--radius-sm); outline: none;">
+                <option value="all" style="background: var(--bg-secondary); color: var(--text-primary);">All Types</option>
+                <option value="Internal" style="background: var(--bg-secondary); color: var(--text-primary);">Internal</option>
+                <option value="External" style="background: var(--bg-secondary); color: var(--text-primary);">External</option>
+                <option value="POC" style="background: var(--bg-secondary); color: var(--text-primary);">POC</option>
+              </select>
             </div>
-            <div class="filter-tabs" id="projectStatusFilterTabs">
-              <span style="font-size:11px;color:var(--text-muted);align-self:center;margin-right:4px;">Status:</span>
-              <button class="filter-tab active" data-filter="all">All</button>
-              <button class="filter-tab" data-filter="Active">Active</button>
-              <button class="filter-tab" data-filter="On Hold">On Hold</button>
-              <button class="filter-tab" data-filter="Completed">Completed</button>
+            <div class="filter-dropdown" style="display: flex; align-items: center; margin-right: 8px;">
+              <span style="font-size:11px;color:var(--text-muted);margin-right:4px;">Status:</span>
+              <select id="projectStatusFilterDropdown" style="padding: 6px 10px; font-size: 12px; background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border); color: var(--text-primary); border-radius: var(--radius-sm); outline: none;">
+                <option value="all" style="background: var(--bg-secondary); color: var(--text-primary);">All Statuses</option>
+                <option value="Active" style="background: var(--bg-secondary); color: var(--text-primary);">Active</option>
+                <option value="On Hold" style="background: var(--bg-secondary); color: var(--text-primary);">On Hold</option>
+                <option value="Completed" style="background: var(--bg-secondary); color: var(--text-primary);">Completed</option>
+              </select>
+            </div>
+            <div class="filter-dropdown" style="display: flex; align-items: center; margin-right: 8px;">
+              <span style="font-size:11px;color:var(--text-muted);margin-right:4px;">Member:</span>
+              <select id="projectMemberFilter" style="padding: 6px 10px; font-size: 12px; background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border); color: var(--text-primary); border-radius: var(--radius-sm); outline: none;">
+                <option value="all" style="background: var(--bg-secondary); color: var(--text-primary);">All Members</option>
+              </select>
             </div>
             <div class="search-box">
               <i class="icon-search"></i>

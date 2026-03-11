@@ -3,6 +3,7 @@ import { showToast, openModal, closeModal, canEdit } from '../lib/ui.js';
 
 let currentTypeFilter = 'all';
 let currentStatusFilter = 'all';
+let currentMemberFilter = 'all';
 let currentPage = 1;
 const itemsPerPage = 8;
 
@@ -21,6 +22,13 @@ export async function renderProjects() {
         // Apply status filter
         if (currentStatusFilter !== 'all') {
             filtered = filtered.filter(p => p.status === currentStatusFilter);
+        }
+
+        // Apply member filter
+        if (currentMemberFilter !== 'all') {
+            filtered = filtered.filter(p => 
+                (p.project_assignments || []).some(a => a.member_id === currentMemberFilter)
+            );
         }
 
         const tbody = document.getElementById('projectsTableBody');
@@ -132,29 +140,44 @@ function renderPaginationControls(totalItems, totalPages, startIndex, endIndex) 
     pageNumbers.innerHTML = pagesHTML;
 }
 
-export function initProjectsView() {
+export async function initProjectsView() {
+    // Populate member dropdown for filter
+    try {
+        const members = await fetchMembers();
+        const memberFilter = document.getElementById('projectMemberFilter');
+        if (memberFilter) {
+            // Keep the default "All Members" option
+            let optionsHtml = '<option value="all" style="background: var(--bg-secondary); color: var(--text-primary);">All Members</option>';
+            members.forEach(m => {
+                optionsHtml += `<option value="${m.id}" style="background: var(--bg-secondary); color: var(--text-primary);">${m.name}</option>`;
+            });
+            memberFilter.innerHTML = optionsHtml;
+
+            // Add change listener
+            memberFilter.addEventListener('change', (e) => {
+                currentMemberFilter = e.target.value;
+                currentPage = 1; // Reset to page 1
+                renderProjects();
+            });
+        }
+    } catch (err) {
+        console.error('Failed to populate member filter:', err);
+    }
+
     document.getElementById('addProjectBtn')?.addEventListener('click', () => openProjectModal());
     document.getElementById('projectSearch')?.addEventListener('input', () => renderProjects());
 
-    // Type Filter tabs
-    document.getElementById('projectTypeFilterTabs')?.addEventListener('click', (e) => {
-        const tab = e.target.closest('.filter-tab');
-        if (!tab) return;
-        currentTypeFilter = tab.dataset.filter;
+    // Type Filter Dropdown
+    document.getElementById('projectTypeFilterDropdown')?.addEventListener('change', (e) => {
+        currentTypeFilter = e.target.value;
         currentPage = 1; // Reset to page 1 on filter
-        document.querySelectorAll('#projectTypeFilterTabs .filter-tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
         renderProjects();
     });
 
-    // Status Filter tabs
-    document.getElementById('projectStatusFilterTabs')?.addEventListener('click', (e) => {
-        const tab = e.target.closest('.filter-tab');
-        if (!tab) return;
-        currentStatusFilter = tab.dataset.filter;
+    // Status Filter Dropdown
+    document.getElementById('projectStatusFilterDropdown')?.addEventListener('change', (e) => {
+        currentStatusFilter = e.target.value;
         currentPage = 1; // Reset to page 1 on filter
-        document.querySelectorAll('#projectStatusFilterTabs .filter-tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
         renderProjects();
     });
 
