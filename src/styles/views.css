@@ -419,8 +419,8 @@
 }
 
 .capacity-project-tag .alloc {
-    color: var(--color-white);
-    font-weight: 700;
+    color: var(--text-primary);
+    font-weight: 800;
 }
 
 /* ===== SKILLS MATRIX ===== */

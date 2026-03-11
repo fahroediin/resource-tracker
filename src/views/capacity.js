@@ -20,8 +20,9 @@ export async function renderCapacity() {
             const status = getCapacityStatus(util);
             const barColor = getBarColor(util);
 
+            const activePhases = ['Doc Creation', 'Design Review', 'Development'];
             const assignedProjects = projects
-                .filter(p => (p.project_assignments || []).some(a => a.member_id === m.id) && p.status !== 'Completed')
+                .filter(p => p.status === 'Active' && activePhases.includes(p.phase) && (p.project_assignments || []).some(a => a.member_id === m.id))
                 .map(p => {
                     const a = p.project_assignments.find(a => a.member_id === m.id);
                     return `<div class="capacity-project-tag">${p.name} <span class="alloc">${a.allocation}%</span></div>`;
@@ -39,7 +40,7 @@ export async function renderCapacity() {
             </div>
             <div>
               <span class="capacity-status ${status.cls}">${status.label}</span>
-              <span style="margin-left:8px;font-size:20px;font-weight:800;color:${util > 100 ? 'var(--accent-rose)' : 'var(--text-primary)'}">${util}%</span>
+              <span style="margin-left:8px;font-size:20px;font-weight:800;color:var(--text-primary);">${util}%</span>
             </div>
           </div>
           <div class="capacity-bar-container">

@@ -40,8 +40,9 @@ export function getBarColor(pct) {
 
 export function getMemberUtilization(memberId, projects) {
     let total = 0;
+    const activePhases = ['Doc Creation', 'Design Review', 'Development'];
     for (const p of projects) {
-        if (p.status === 'Completed' || p.status === 'On Hold') continue;
+        if (p.status !== 'Active' || !activePhases.includes(p.phase)) continue;
         const assignment = (p.project_assignments || []).find(a => a.member_id === memberId);
         if (assignment) total += assignment.allocation;
     }
