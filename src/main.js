@@ -11,6 +11,7 @@ import { renderSkillsMatrix, initSkillsView } from './views/skills.js';
 import { renderUsers, initUsersView } from './views/users.js';
 import { renderSettings, initSettingsView } from './views/settings.js';
 import { renderSuperadmin, initSuperadminView } from './views/superadmin.js';
+import { renderMyProjects, initMyProjectsView } from './views/myprojects.js';
 
 // Register view renderers
 registerViewRenderer('dashboard', renderDashboard);
@@ -21,6 +22,7 @@ registerViewRenderer('skills', renderSkillsMatrix);
 registerViewRenderer('users', renderUsers);
 registerViewRenderer('settings', renderSettings);
 registerViewRenderer('superadmin', renderSuperadmin);
+registerViewRenderer('myprojects', renderMyProjects);
 
 // ===== APP INIT =====
 
@@ -33,6 +35,7 @@ async function initApp() {
     initUsersView();
     initSettingsView();
     initSuperadminView();
+    initMyProjectsView();
 
     // Bind sidebar nav
     document.querySelectorAll('.nav-item[data-view]').forEach(item => {
@@ -139,6 +142,14 @@ async function showApp() {
         const canSeeSuperadmin = user.profile?.role === 'superadmin';
         superadminNav.style.display = canSeeSuperadmin ? '' : 'none';
     }
+
+    // Show/hide My Projects nav — only for member role
+    const myProjectsNav = document.querySelector('.nav-item[data-view="myprojects"]');
+    if (myProjectsNav) {
+        const canSeeMyProjects = user.profile?.role === 'member';
+        myProjectsNav.style.display = canSeeMyProjects ? '' : 'none';
+    }
+
     const appSection = document.getElementById('appSection');
     const isFirstLoad = appSection.classList.contains('hidden');
 

@@ -283,6 +283,19 @@ create policy "Head/Admin can manage assignments"
     )
   );
 
+-- Members can update their OWN allocation (email-matched)
+drop policy if exists "Members can update own allocation" on public.project_assignments;
+create policy "Members can update own allocation"
+  on public.project_assignments for update
+  using (
+    exists (
+      select 1 from public.members m
+      join auth.users au on lower(au.email) = lower(m.email)
+      where m.id = project_assignments.member_id
+        and au.id = auth.uid()
+    )
+  );
+
 -- member_skills
 create policy "Skills viewable by division or superadmin"
   on public.member_skills for select using (

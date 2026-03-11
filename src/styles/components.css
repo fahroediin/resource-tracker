@@ -778,3 +778,47 @@ tbody tr:last-child td {
 .settings-tag-remove:hover {
     color: var(--text-primary);
 }
+
+/* ===== MY PROJECTS VIEW ===== */
+.my-projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+}
+
+.my-project-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.allocation-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--glass-border);
+    outline: none;
+    cursor: pointer;
+}
+
+.allocation-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--text-primary);
+    cursor: pointer;
+    border: 2px solid var(--bg-primary);
+    box-shadow: 0 0 0 2px var(--text-secondary);
+}
+
+.allocation-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--text-primary);
+    cursor: pointer;
+    border: 2px solid var(--bg-primary);
+}
