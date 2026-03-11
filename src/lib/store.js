@@ -209,14 +209,12 @@ export async function seedIfEmpty() {
 
     if (count > 0) return;
 
+    // Team: 1 Head (Fahrudin) + 3 Members
     const members = [
-        { name: 'Rina Wulandari', role: 'Senior BA', status: 'Assigned', email: 'rina@company.com' },
+        { name: 'Fahrudin', role: 'Head of BA', status: 'Assigned', email: 'fahrudin@company.com' },
+        { name: 'Rina Wulandari', role: 'BA', status: 'Assigned', email: 'rina@company.com' },
         { name: 'Budi Santoso', role: 'BA', status: 'Assigned', email: 'budi@company.com' },
-        { name: 'Dewi Permata', role: 'BA', status: 'Available', email: 'dewi@company.com' },
-        { name: 'Andi Pratama', role: 'Senior BA', status: 'Assigned', email: 'andi@company.com' },
-        { name: 'Siti Nurhaliza', role: 'Junior BA', status: 'Training', email: 'siti@company.com' },
-        { name: 'Fajar Ramadhan', role: 'Junior BA', status: 'Assigned', email: 'fajar@company.com' },
-        { name: 'Maya Sari', role: 'Intern', status: 'Assigned', email: 'maya@company.com' },
+        { name: 'Dewi Permata', role: 'Junior BA', status: 'Available', email: 'dewi@company.com' },
     ];
 
     const { data: insertedMembers, error: membersError } = await supabase
@@ -226,10 +224,11 @@ export async function seedIfEmpty() {
     if (membersError) throw membersError;
 
     const projectsData = [
-        { name: 'Core Banking Revamp', priority: 'High', status: 'Active', start_date: '2026-01-15', end_date: '2026-06-30' },
-        { name: 'Mobile App Enhancement', priority: 'Medium', status: 'Active', start_date: '2026-02-01', end_date: '2026-05-15' },
-        { name: 'Data Platform Migration', priority: 'High', status: 'Planning', start_date: '2026-03-01', end_date: '2026-08-30' },
-        { name: 'Customer Onboarding Flow', priority: 'Low', status: 'Active', start_date: '2026-01-10', end_date: '2026-04-30' },
+        { name: 'Core Banking Revamp', client_name: 'Internal Dev', type: 'Internal', phase: 'Development', priority: 'High', status: 'Active', start_date: '2026-01-15', end_date: '2026-06-30' },
+        { name: 'Mobile App Enhancement', client_name: 'Bank Central Asia', type: 'External', phase: 'SIT', priority: 'Medium', status: 'Active', start_date: '2026-02-01', end_date: '2026-05-15' },
+        { name: 'AI Chatbot Integration', client_name: 'Telkomsel', type: 'POC', phase: 'Pembuatan Dokumen', priority: 'High', status: 'Planning', start_date: '2026-03-01', end_date: '2026-04-30' },
+        { name: 'Customer Onboarding Flow', client_name: 'Internal Dev', type: 'Internal', phase: 'Pembuatan Dokumen', priority: 'Medium', status: 'Active', start_date: '2026-01-10', end_date: '2026-04-30' },
+        { name: 'Partner API Gateway', client_name: 'Gojek', type: 'External', phase: 'Pembuatan Dokumen', priority: 'Low', status: 'Planning', start_date: '2026-04-01', end_date: '2026-07-30' },
     ];
 
     const { data: insertedProjects, error: projError } = await supabase
@@ -241,28 +240,29 @@ export async function seedIfEmpty() {
     const m = insertedMembers;
     const p = insertedProjects;
     const assignments = [
-        { project_id: p[0].id, member_id: m[0].id, allocation: 60 },
-        { project_id: p[0].id, member_id: m[1].id, allocation: 80 },
-        { project_id: p[0].id, member_id: m[3].id, allocation: 40 },
+        // Core Banking Revamp — Fahrudin + Rina + Budi
+        { project_id: p[0].id, member_id: m[0].id, allocation: 40 },
+        { project_id: p[0].id, member_id: m[1].id, allocation: 60 },
+        { project_id: p[0].id, member_id: m[2].id, allocation: 50 },
+        // Mobile App Enhancement — Fahrudin + Dewi
         { project_id: p[1].id, member_id: m[0].id, allocation: 30 },
-        { project_id: p[1].id, member_id: m[5].id, allocation: 70 },
-        { project_id: p[1].id, member_id: m[6].id, allocation: 50 },
-        { project_id: p[2].id, member_id: m[3].id, allocation: 50 },
-        { project_id: p[2].id, member_id: m[2].id, allocation: 40 },
-        { project_id: p[3].id, member_id: m[5].id, allocation: 30 },
-        { project_id: p[3].id, member_id: m[6].id, allocation: 40 },
+        { project_id: p[1].id, member_id: m[3].id, allocation: 50 },
+        // AI Chatbot POC — Budi
+        { project_id: p[2].id, member_id: m[2].id, allocation: 30 },
+        // Customer Onboarding — Rina + Dewi
+        { project_id: p[3].id, member_id: m[1].id, allocation: 30 },
+        { project_id: p[3].id, member_id: m[3].id, allocation: 40 },
+        // Partner API Gateway — Fahrudin
+        { project_id: p[4].id, member_id: m[0].id, allocation: 20 },
     ];
 
     await supabase.from('project_assignments').insert(assignments);
 
     const skillSeeds = [
-        [5, 4, 3, 5, 4, 3, 4, 2, 3, 4],
-        [3, 3, 4, 3, 5, 4, 3, 2, 4, 3],
-        [3, 3, 5, 4, 3, 5, 2, 1, 3, 3],
-        [5, 5, 3, 4, 4, 2, 5, 3, 3, 5],
-        [2, 2, 2, 2, 3, 2, 1, 1, 2, 2],
-        [3, 2, 3, 2, 4, 3, 2, 2, 3, 2],
-        [1, 1, 2, 1, 2, 1, 1, 3, 2, 1],
+        [5, 5, 4, 5, 4, 3, 4, 3, 4, 5], // Fahrudin (Head)
+        [4, 3, 4, 4, 5, 4, 3, 2, 4, 3], // Rina
+        [3, 3, 5, 3, 4, 5, 3, 2, 3, 3], // Budi
+        [2, 2, 3, 2, 3, 2, 2, 3, 2, 2], // Dewi
     ];
 
     const skillRows = [];

@@ -1,43 +1,94 @@
 import { fetchMembers, fetchProjects, createProject, updateProject, deleteProject as deleteProjectStore } from '../lib/store.js';
 import { showToast, openModal, closeModal, canEdit } from '../lib/ui.js';
 
+let currentTypeFilter = 'all';
+let currentStatusFilter = 'all';
+let currentPage = 1;
+const itemsPerPage = 8;
+
 export async function renderProjects() {
     try {
         const projects = await fetchProjects();
         const members = await fetchMembers();
         const search = (document.getElementById('projectSearch')?.value || '').toLowerCase();
-        const filtered = projects.filter(p => p.name.toLowerCase().includes(search));
+        let filtered = projects.filter(p => p.name.toLowerCase().includes(search));
+
+        // Apply type filter
+        if (currentTypeFilter !== 'all') {
+            filtered = filtered.filter(p => p.type === currentTypeFilter);
+        }
+
+        // Apply status filter
+        if (currentStatusFilter !== 'all') {
+            filtered = filtered.filter(p => p.status === currentStatusFilter);
+        }
+
         const tbody = document.getElementById('projectsTableBody');
         const empty = document.getElementById('projectsEmpty');
         const addBtn = document.getElementById('addProjectBtn');
+        const pagination = document.getElementById('projectsPagination');
 
         if (addBtn) addBtn.style.display = canEdit() ? '' : 'none';
 
         if (filtered.length === 0) {
             tbody.innerHTML = '';
-            empty.style.display = 'block';
+            empty.style.display = 'flex';
+            pagination.style.display = 'none';
             return;
         }
 
+        // Pagination calculations
+        const totalItems = filtered.length;
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+        
+        // Ensure current page is valid after filtering/deleting
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+        const paginatedProjects = filtered.slice(startIndex, endIndex);
+
         empty.style.display = 'none';
-        tbody.innerHTML = filtered.map(p => {
+        pagination.style.display = 'flex';
+        
+        // Render table rows
+        tbody.innerHTML = paginatedProjects.map(p => {
             const priorityCls = p.priority === 'High' ? 'priority-high' : p.priority === 'Medium' ? 'priority-medium' : 'priority-low';
             const statusMap = { 'Active': 'badge-active', 'Planning': 'badge-planning', 'On Hold': 'badge-onhold', 'Completed': 'badge-completed' };
+            const typeMap = { 'Internal': 'badge-internal', 'External': 'badge-external', 'POC': 'badge-poc' };
+            const phaseMap = { 'Pembuatan Dokumen': '#e6e6e6', 'Development': '#d0d0d0', 'SIT': '#b0b0b0', 'UAT': '#909090', 'Go Live': '#707070' };
             const assignedMembers = (p.project_assignments || []).map(a => {
                 const m = members.find(mm => mm.id === a.member_id);
                 return m ? `${m.name} (${a.allocation}%)` : null;
             }).filter(Boolean);
 
+            // Check if Internal & Active & > 14 days AND Phase is 'Doc Creation'
+            let warningHtml = '';
+            if (p.type === 'Internal' && p.status === 'Active' && p.phase === 'Doc Creation' && p.start_date) {
+                const startDate = new Date(p.start_date);
+                const today = new Date();
+                const diffTime = Math.abs(today - startDate);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                if (diffDays > 14) {
+                    warningHtml = `<span title="Project Internal at Doc Creation for > 14 days (${diffDays} days)" style="color:#d9534f; margin-left: 6px; font-size: 14px;"><i class="icon-alert-triangle"></i></span>`;
+                }
+            }
+
             const actions = canEdit() ? `
         <div class="row-actions">
-          <button title="Edit" data-action="edit-project" data-id="${p.id}"><i class="icon-pencil"></i></button>
-          <button title="Delete" class="delete" data-action="delete-project" data-id="${p.id}"><i class="icon-trash-2"></i></button>
+           <button title="Edit" data-action="edit-project" data-id="${p.id}"><i class="icon-pencil"></i></button>
+           <button title="Delete" class="delete" data-action="delete-project" data-id="${p.id}"><i class="icon-trash-2"></i></button>
         </div>
       ` : '';
 
             return `
         <tr>
-          <td style="font-weight:600">${p.name}</td>
+          <td style="font-weight:600">${p.name} ${warningHtml}</td>
+          <td style="color:var(--text-secondary);font-size:12px;">${p.client_name || '—'}</td>
+          <td><span class="badge ${typeMap[p.type] || 'badge-internal'}">${p.type || 'Internal'}</span></td>
+          <td><span class="badge" style="background:${phaseMap[p.phase] || '#e6e6e6'};color:#000;">${p.phase || 'Pembuatan Dokumen'}</span></td>
           <td><div style="display:flex;align-items:center;gap:8px"><div class="project-priority ${priorityCls}"></div>${p.priority}</div></td>
           <td><span class="badge ${statusMap[p.status] || ''}">${p.status}</span></td>
           <td>
@@ -49,14 +100,85 @@ export async function renderProjects() {
         </tr>
       `;
         }).join('');
+
+        // Render pagination controls
+        renderPaginationControls(totalItems, totalPages, startIndex, endIndex);
+
     } catch (err) {
         console.error('Projects render error:', err);
     }
 }
 
+function renderPaginationControls(totalItems, totalPages, startIndex, endIndex) {
+    document.getElementById('projectsPageInfo').textContent = 
+        `Showing ${startIndex + 1}-${endIndex} of ${totalItems} projects`;
+
+    const prevBtn = document.getElementById('projectsPrevBtn');
+    const nextBtn = document.getElementById('projectsNextBtn');
+    const pageNumbers = document.getElementById('projectsPageNumbers');
+
+    prevBtn.disabled = currentPage === 1;
+    nextBtn.disabled = currentPage === totalPages;
+
+    let pagesHTML = '';
+    for (let i = 1; i <= totalPages; i++) {
+        // Simple logic to show logic around current page to avoid huge lists
+        if (totalPages <= 7 || (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1))) {
+            pagesHTML += `<button class="pagination-btn ${i === currentPage ? 'active' : ''}" data-page="${i}">${i}</button>`;
+        } else if (i === currentPage - 2 || i === currentPage + 2) {
+            pagesHTML += `<span style="color:var(--text-muted);align-self:end;padding-bottom:4px">...</span>`;
+        }
+    }
+    pageNumbers.innerHTML = pagesHTML;
+}
+
 export function initProjectsView() {
     document.getElementById('addProjectBtn')?.addEventListener('click', () => openProjectModal());
     document.getElementById('projectSearch')?.addEventListener('input', () => renderProjects());
+
+    // Type Filter tabs
+    document.getElementById('projectTypeFilterTabs')?.addEventListener('click', (e) => {
+        const tab = e.target.closest('.filter-tab');
+        if (!tab) return;
+        currentTypeFilter = tab.dataset.filter;
+        currentPage = 1; // Reset to page 1 on filter
+        document.querySelectorAll('#projectTypeFilterTabs .filter-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        renderProjects();
+    });
+
+    // Status Filter tabs
+    document.getElementById('projectStatusFilterTabs')?.addEventListener('click', (e) => {
+        const tab = e.target.closest('.filter-tab');
+        if (!tab) return;
+        currentStatusFilter = tab.dataset.filter;
+        currentPage = 1; // Reset to page 1 on filter
+        document.querySelectorAll('#projectStatusFilterTabs .filter-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        renderProjects();
+    });
+
+    // Search input
+    document.getElementById('projectSearch')?.addEventListener('input', () => {
+        currentPage = 1; // Reset to page 1 on search
+        renderProjects();
+    });
+
+    // Pagination clicks
+    document.getElementById('projectsPrevBtn')?.addEventListener('click', () => {
+        if (currentPage > 1) { currentPage--; renderProjects(); }
+    });
+    
+    document.getElementById('projectsNextBtn')?.addEventListener('click', () => {
+        currentPage++; renderProjects();
+    });
+
+    document.getElementById('projectsPageNumbers')?.addEventListener('click', (e) => {
+        const btn = e.target.closest('.pagination-btn');
+        if (!btn || btn.classList.contains('active')) return;
+        currentPage = parseInt(btn.dataset.page, 10);
+        renderProjects();
+    });
 
     document.getElementById('projectsTableBody')?.addEventListener('click', async (e) => {
         const btn = e.target.closest('[data-action]');
@@ -75,8 +197,11 @@ async function openProjectModal(project = null) {
     document.getElementById('projectModalTitle').textContent = project ? 'Edit Project' : 'Add Project';
     document.getElementById('projectId').value = project ? project.id : '';
     document.getElementById('projectName').value = project ? project.name : '';
+    document.getElementById('projectClient').value = project ? (project.client_name || '') : '';
+    document.getElementById('projectType').value = project ? (project.type || 'Internal') : 'Internal';
     document.getElementById('projectPriority').value = project ? project.priority : 'Medium';
     document.getElementById('projectStatus').value = project ? project.status : 'Active';
+    document.getElementById('projectPhase').value = project ? (project.phase || 'Pembuatan Dokumen') : 'Pembuatan Dokumen';
     document.getElementById('projectStart').value = project ? (project.start_date || '') : '';
     document.getElementById('projectEnd').value = project ? (project.end_date || '') : '';
 
@@ -143,8 +268,11 @@ async function saveProject() {
 
     const data = {
         name,
+        client_name: document.getElementById('projectClient').value.trim() || null,
+        type: document.getElementById('projectType').value,
         priority: document.getElementById('projectPriority').value,
         status: document.getElementById('projectStatus').value,
+        phase: document.getElementById('projectPhase').value,
         start_date: document.getElementById('projectStart').value || null,
         end_date: document.getElementById('projectEnd').value || null,
     };

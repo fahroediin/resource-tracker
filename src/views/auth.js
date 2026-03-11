@@ -70,8 +70,12 @@ async function handleAuthSubmit(e) {
         if (isLoginMode) {
             await signIn(email, password);
         } else {
-            await signUp(email, password, fullName);
-            showToast('Account created! You can now sign in.', 'success');
+            const result = await signUp(email, password, fullName);
+            if (result.isFirstUser) {
+                showToast('Admin account created! Signing you in...', 'success');
+            } else {
+                showToast('Account created! Your access is read-only until an admin approves.', 'info');
+            }
         }
     } catch (err) {
         showAuthError(err.message || 'Authentication failed');

@@ -1,40 +1,41 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-    /* Core palette */
-    --color-sage: #A2CB8B;
-    --color-sage-light: #b8d9a5;
-    --color-sage-dark: #7fb366;
-    --color-sage-muted: rgba(162, 203, 139, 0.15);
-    --color-sage-glow: rgba(162, 203, 139, 0.25);
+    /* Core monochrome palette */
+    --color-white: #F5F5F5;
+    --color-white-pure: #FFFFFF;
+    --color-white-soft: #E8E8E8;
+    --color-gray-light: #B0B0B0;
+    --color-gray: #808080;
+    --color-gray-dark: #505050;
+    --color-charcoal: #2A2A2A;
+    --color-charcoal-dark: #1A1A1A;
+    --color-black: #0D0D0D;
+    --color-black-true: #000000;
 
-    --color-cream: #FFFBF1;
-    --color-cream-muted: rgba(255, 251, 241, 0.7);
-    --color-cream-dim: rgba(255, 251, 241, 0.45);
-
-    --color-navy: #25343F;
-    --color-navy-light: #2f4250;
-    --color-navy-lighter: #3a5060;
-    --color-navy-dark: #1b2730;
-    --color-navy-darker: #131d24;
+    /* Accent monochrome tokens */
+    --color-accent: #FFFFFF;
+    --color-accent-soft: #D0D0D0;
+    --color-accent-muted: rgba(255, 255, 255, 0.12);
+    --color-accent-glow: rgba(255, 255, 255, 0.2);
 
     /* Semantic tokens */
-    --bg-primary: var(--color-navy-darker);
-    --bg-secondary: var(--color-navy-dark);
-    --bg-gradient: linear-gradient(135deg, #131d24 0%, #25343F 50%, #1b2730 100%);
-    --glass-bg: rgba(37, 52, 63, 0.5);
-    --glass-border: rgba(162, 203, 139, 0.1);
-    --glass-hover: rgba(162, 203, 139, 0.06);
+    --bg-primary: var(--color-black);
+    --bg-secondary: var(--color-charcoal-dark);
+    --bg-gradient: linear-gradient(135deg, #0D0D0D 0%, #1A1A1A 50%, #0D0D0D 100%);
+    --glass-bg: rgba(30, 30, 30, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-hover: rgba(255, 255, 255, 0.04);
 
-    --accent-primary: var(--color-sage);
-    --accent-secondary: #6bc5d2;
-    --accent-amber: #f0c050;
-    --accent-rose: #e8636f;
-    --accent-purple: #a87fd4;
+    --accent-primary: var(--color-white);
+    --accent-secondary: var(--color-gray-light);
+    --accent-amber: var(--color-gray);
+    --accent-rose: var(--color-gray-dark);
+    --accent-purple: var(--color-gray-light);
 
-    --text-primary: var(--color-cream);
-    --text-secondary: var(--color-cream-muted);
-    --text-muted: var(--color-cream-dim);
+    --text-primary: var(--color-white);
+    --text-secondary: rgba(245, 245, 245, 0.7);
+    --text-muted: rgba(245, 245, 245, 0.4);
 
     /* Layout */
     --sidebar-width: 260px;
@@ -42,6 +43,43 @@
     --radius-sm: 8px;
     --radius-lg: 16px;
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Light Theme overrides */
+:root[data-theme="light"] {
+    --color-white: #0D0D0D;
+    --color-white-pure: #000000;
+    --color-white-soft: #1A1A1A;
+    --color-gray-light: #505050;
+    --color-gray: #808080;
+    --color-gray-dark: #B0B0B0;
+    --color-charcoal: #E8E8E8;
+    --color-charcoal-dark: #F5F5F5;
+    --color-black: #FFFFFF;
+    --color-black-true: #FFFFFF;
+
+    --color-accent: #000000;
+    --color-accent-soft: #2A2A2A;
+    --color-accent-muted: rgba(0, 0, 0, 0.08);
+    --color-accent-glow: rgba(0, 0, 0, 0.1);
+
+    --bg-primary: #FAFAFA;
+    --bg-secondary: #FFFFFF;
+    --bg-gradient: linear-gradient(135deg, #F0F0F0 0%, #FFFFFF 50%, #F0F0F0 100%);
+    
+    --glass-bg: rgba(255, 255, 255, 0.8);
+    --glass-border: rgba(0, 0, 0, 0.08);
+    --glass-hover: rgba(0, 0, 0, 0.04);
+
+    --accent-primary: #000000;
+    --accent-secondary: #505050;
+    --accent-amber: #808080;
+    --accent-rose: #2A2A2A;
+    --accent-purple: #505050;
+
+    --text-primary: #111111;
+    --text-secondary: rgba(0, 0, 0, 0.7);
+    --text-muted: rgba(0, 0, 0, 0.4);
 }
 
 * {
@@ -68,12 +106,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: rgba(162, 203, 139, 0.15);
+    background: rgba(128, 128, 128, 0.3);
     border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: rgba(162, 203, 139, 0.3);
+    background: rgba(255, 255, 255, 0.2);
 }
 
 .app-layout {

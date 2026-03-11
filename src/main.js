@@ -70,6 +70,23 @@ async function initApp() {
             showAuth();
         }
     });
+    // Theme Toggle Logic
+    const themeBtn = document.getElementById('themeToggleBtn');
+    if (themeBtn) {
+        const savedTheme = localStorage.getItem('ba-theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.documentElement.setAttribute('data-theme', 'light');
+            themeBtn.innerHTML = '<i class="icon-sun"></i>';
+        }
+
+        themeBtn.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('ba-theme', newTheme);
+            themeBtn.innerHTML = newTheme === 'light' ? '<i class="icon-sun"></i>' : '<i class="icon-moon"></i>';
+        });
+    }
 
     // Initial check
     const user = await getCurrentUser();
@@ -101,9 +118,15 @@ async function showApp() {
         const canSeeUsers = user.profile?.role === 'admin' || user.profile?.role === 'head';
         usersNav.style.display = canSeeUsers ? '' : 'none';
     }
+    const appSection = document.getElementById('appSection');
+    const isFirstLoad = appSection.classList.contains('hidden');
+
+    // Hide initial loader
+    const loader = document.getElementById('globalLoader');
+    if (loader) loader.style.display = 'none';
 
     document.getElementById('authSection').classList.add('hidden');
-    document.getElementById('appSection').classList.remove('hidden');
+    appSection.classList.remove('hidden');
 
     // Show pending approval banner for member role
     const banner = document.getElementById('approvalBanner');
@@ -111,19 +134,26 @@ async function showApp() {
         banner.classList.toggle('hidden', user.profile?.role !== 'member');
     }
 
-    // Seed data if needed
-    try {
-        await seedIfEmpty();
-    } catch (err) {
-        console.warn('Seed skipped:', err.message);
-    }
+    // Seed data if needed (disabled — uncomment to auto-seed on first use)
+    // try {
+    //     await seedIfEmpty();
+    // } catch (err) {
+    //     console.warn('Seed skipped:', err.message);
+    // }
 
-    // Render dashboard
-    switchView('dashboard');
+    // Render dashboard only if we just loaded the app/logged in
+    if (isFirstLoad) {
+        switchView('dashboard');
+    }
 }
 
 function showAuth() {
     setCurrentUserProfile(null);
+    
+    // Hide initial loader
+    const loader = document.getElementById('globalLoader');
+    if (loader) loader.style.display = 'none';
+
     document.getElementById('authSection').classList.remove('hidden');
     document.getElementById('appSection').classList.add('hidden');
 }

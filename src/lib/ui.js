@@ -1,12 +1,12 @@
 const AVATAR_COLORS = [
-    'linear-gradient(135deg, #A2CB8B, #7fb366)',
-    'linear-gradient(135deg, #6bc5d2, #4da8b5)',
-    'linear-gradient(135deg, #a87fd4, #8b5fbf)',
-    'linear-gradient(135deg, #f0c050, #d4a030)',
-    'linear-gradient(135deg, #e8636f, #c5404c)',
-    'linear-gradient(135deg, #7fb366, #5a9a40)',
-    'linear-gradient(135deg, #4da8b5, #3690a0)',
-    'linear-gradient(135deg, #8b5fbf, #7040a0)',
+    'linear-gradient(135deg, #FFFFFF, #C0C0C0)',
+    'linear-gradient(135deg, #D0D0D0, #A0A0A0)',
+    'linear-gradient(135deg, #B0B0B0, #808080)',
+    'linear-gradient(135deg, #909090, #606060)',
+    'linear-gradient(135deg, #E0E0E0, #B0B0B0)',
+    'linear-gradient(135deg, #C8C8C8, #989898)',
+    'linear-gradient(135deg, #A8A8A8, #787878)',
+    'linear-gradient(135deg, #DADADA, #AAAAAA)',
 ];
 
 export function getInitials(name) {
@@ -32,10 +32,10 @@ export function getCapacityStatus(pct) {
 }
 
 export function getBarColor(pct) {
-    if (pct <= 50) return 'linear-gradient(90deg, #6bc5d2, #88d8e0)';
-    if (pct <= 80) return 'linear-gradient(90deg, #A2CB8B, #b8d9a5)';
-    if (pct <= 100) return 'linear-gradient(90deg, #f0c050, #f5d280)';
-    return 'linear-gradient(90deg, #e8636f, #f09da5)';
+    if (pct <= 50) return 'linear-gradient(90deg, #606060, #808080)';
+    if (pct <= 80) return 'linear-gradient(90deg, #A0A0A0, #C0C0C0)';
+    if (pct <= 100) return 'linear-gradient(90deg, #D0D0D0, #E8E8E8)';
+    return 'linear-gradient(90deg, #FFFFFF, #E0E0E0)';
 }
 
 export function getMemberUtilization(memberId, projects) {

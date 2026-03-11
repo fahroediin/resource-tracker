@@ -13,8 +13,13 @@
 
 <body>
 
+  <!-- ===== INITIAL LOADER ===== -->
+  <div id="globalLoader" style="position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg-primary);z-index:9999;display:flex;align-items:center;justify-content:center;">
+    <div class="loading-spinner" style="width:40px;height:40px;border-width:3px;"></div>
+  </div>
+
   <!-- ===== AUTH SECTION ===== -->
-  <div id="authSection" class="auth-container">
+  <div id="authSection" class="auth-container hidden">
     <div class="auth-card">
       <div class="auth-logo">
         <div class="logo-icon">RT</div>
@@ -89,6 +94,9 @@
             <span class="user-name" id="currentUserName">User</span>
             <span class="user-role" id="currentUserRole">member</span>
           </div>
+          <button class="logout-btn" id="themeToggleBtn" title="Toggle Theme" style="margin-right: 4px;">
+            <i class="icon-moon"></i>
+          </button>
           <button class="logout-btn" id="logoutBtn" title="Sign Out">
             <i class="icon-log-out"></i>
           </button>
@@ -120,7 +128,15 @@
             <div class="utilization-list" id="utilizationList"></div>
           </div>
           <div class="glass-card">
-            <div class="section-title"><i class="icon-folder-kanban"></i> Active Projects</div>
+            <div class="section-title" style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
+              <div><i class="icon-folder-kanban"></i> Active Projects</div>
+              <div class="filter-tabs" id="dashProjectFilterTabs" style="transform: scale(0.85); transform-origin: right center;">
+                <button class="filter-tab active" data-filter="all">All</button>
+                <button class="filter-tab" data-filter="Internal">Internal</button>
+                <button class="filter-tab" data-filter="External">External</button>
+                <button class="filter-tab" data-filter="POC">POC</button>
+              </div>
+            </div>
             <div class="project-list" id="activeProjectList"></div>
           </div>
         </div>
@@ -174,7 +190,21 @@
             <h1>Project Assignments</h1>
             <p class="header-subtitle">Track project allocations and assignments</p>
           </div>
-          <div class="header-actions">
+          <div class="header-actions" style="flex-wrap: wrap; justify-content: flex-end;">
+            <div class="filter-tabs" id="projectTypeFilterTabs" style="margin-right: 8px;">
+              <span style="font-size:11px;color:var(--text-muted);align-self:center;margin-right:4px;">Type:</span>
+              <button class="filter-tab active" data-filter="all">All</button>
+              <button class="filter-tab" data-filter="Internal">Internal</button>
+              <button class="filter-tab" data-filter="External">External</button>
+              <button class="filter-tab" data-filter="POC">POC</button>
+            </div>
+            <div class="filter-tabs" id="projectStatusFilterTabs">
+              <span style="font-size:11px;color:var(--text-muted);align-self:center;margin-right:4px;">Status:</span>
+              <button class="filter-tab active" data-filter="all">All</button>
+              <button class="filter-tab" data-filter="Active">Active</button>
+              <button class="filter-tab" data-filter="On Hold">On Hold</button>
+              <button class="filter-tab" data-filter="Completed">Completed</button>
+            </div>
             <div class="search-box">
               <i class="icon-search"></i>
               <input type="text" placeholder="Search projects..." id="projectSearch">
@@ -190,6 +220,9 @@
               <thead>
                 <tr>
                   <th>Project</th>
+                  <th>Client</th>
+                  <th>Type</th>
+                  <th>Phase</th>
                   <th>Priority</th>
                   <th>Status</th>
                   <th>Assigned Members</th>
@@ -201,6 +234,22 @@
               <tbody id="projectsTableBody"></tbody>
             </table>
           </div>
+          <!-- Pagination Controls -->
+          <div class="pagination-container" id="projectsPagination" style="display:none; justify-content: space-between; align-items: center; padding: 16px; border-top: 1px solid var(--glass-border);">
+            <div class="pagination-info" id="projectsPageInfo" style="font-size: 13px; color: var(--text-muted);">
+              Showing 1-10 of 50 projects
+            </div>
+            <div class="pagination-buttons" style="display: flex; gap: 8px;">
+              <button class="btn btn-secondary btn-sm" id="projectsPrevBtn" disabled>
+                <i class="icon-chevron-left"></i> Prev
+              </button>
+              <div id="projectsPageNumbers" style="display: flex; gap: 4px;"></div>
+              <button class="btn btn-secondary btn-sm" id="projectsNextBtn">
+                Next <i class="icon-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+
           <div class="empty-state" id="projectsEmpty" style="display:none;">
             <i class="icon-folder-kanban"></i>
             <h3>No projects yet</h3>
@@ -341,11 +390,25 @@
       </div>
       <div class="modal-body">
         <input type="hidden" id="projectId">
-        <div class="form-group">
-          <label>Project Name</label>
-          <input type="text" id="projectName" placeholder="e.g. Core Banking Revamp">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Project Name</label>
+            <input type="text" id="projectName" placeholder="e.g. Core Banking Revamp">
+          </div>
+          <div class="form-group">
+            <label>Client Name</label>
+            <input type="text" id="projectClient" placeholder="e.g. Bank Central Asia">
+          </div>
         </div>
         <div class="form-row">
+          <div class="form-group">
+            <label>Type</label>
+            <select id="projectType">
+              <option value="Internal">Internal</option>
+              <option value="External">External</option>
+              <option value="POC">POC</option>
+            </select>
+          </div>
           <div class="form-group">
             <label>Priority</label>
             <select id="projectPriority">
@@ -354,13 +417,27 @@
               <option value="Low">Low</option>
             </select>
           </div>
+        </div>
+        <div class="form-row">
           <div class="form-group">
             <label>Status</label>
             <select id="projectStatus">
               <option value="Active">Active</option>
-              <option value="Planning">Planning</option>
               <option value="On Hold">On Hold</option>
               <option value="Completed">Completed</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Phase</label>
+            <select id="projectPhase">
+              <option value="Planning">Planning</option>
+              <option value="Requirement Gathering">Requirement Gathering</option>
+              <option value="Design">Design</option>
+              <option value="Doc Creation">Doc Creation</option>
+              <option value="Development">Development</option>
+              <option value="SIT">SIT</option>
+              <option value="UAT">UAT</option>
+              <option value="Go Live">Go Live</option>
             </select>
           </div>
         </div>

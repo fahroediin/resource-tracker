@@ -107,8 +107,11 @@ create policy "Head and admin can delete members"
 create table if not exists public.projects (
   id uuid primary key default gen_random_uuid(),
   name text not null,
+  client_name text,
+  type text not null default 'Internal' check (type in ('Internal', 'External', 'POC')),
   priority text not null default 'Medium',
-  status text not null default 'Active',
+  status text not null default 'Active' check (status in ('Active', 'On Hold', 'Completed')),
+  phase text not null default 'Planning' check (phase in ('Planning', 'Requirement Gathering', 'Design', 'Doc Creation', 'Development', 'SIT', 'UAT', 'Go Live')),
   start_date date,
   end_date date,
   created_by uuid references public.profiles(id),

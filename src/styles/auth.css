@@ -27,7 +27,7 @@
     left: 0;
     right: 0;
     height: 3px;
-    background: linear-gradient(90deg, var(--color-sage), var(--accent-secondary), var(--color-sage-dark));
+    background: linear-gradient(90deg, #FFFFFF, #808080, #FFFFFF);
 }
 
 .auth-logo {
@@ -38,14 +38,14 @@
 .auth-logo .logo-icon {
     width: 56px;
     height: 56px;
-    background: linear-gradient(135deg, var(--color-sage), var(--color-sage-dark));
+    background: linear-gradient(135deg, #FFFFFF, #B0B0B0);
     border-radius: var(--radius);
     display: inline-flex;
     align-items: center;
     justify-content: center;
     font-size: 22px;
     font-weight: 800;
-    color: var(--color-navy-darker);
+    color: var(--color-black);
     margin-bottom: 16px;
 }
 
@@ -87,7 +87,7 @@
 }
 
 .auth-toggle a {
-    color: var(--color-sage);
+    color: var(--color-white);
     text-decoration: none;
     font-weight: 600;
     cursor: pointer;
@@ -95,17 +95,17 @@
 }
 
 .auth-toggle a:hover {
-    color: var(--color-sage-light);
+    color: var(--color-gray-light);
     text-decoration: underline;
 }
 
 .auth-error {
-    background: rgba(232, 99, 111, 0.12);
-    border: 1px solid rgba(232, 99, 111, 0.2);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: var(--radius-sm);
     padding: 10px 14px;
     font-size: 12px;
-    color: var(--accent-rose);
+    color: var(--color-gray-light);
     margin-bottom: 16px;
     display: none;
 }
