@@ -283,16 +283,15 @@ create policy "Head/Admin can manage assignments"
     )
   );
 
--- Members can update their OWN allocation (email-matched)
+-- Members can update their OWN allocation (email-matched via auth.email())
 drop policy if exists "Members can update own allocation" on public.project_assignments;
 create policy "Members can update own allocation"
   on public.project_assignments for update
   using (
     exists (
       select 1 from public.members m
-      join auth.users au on lower(au.email) = lower(m.email)
       where m.id = project_assignments.member_id
-        and au.id = auth.uid()
+        and lower(m.email) = lower(auth.email())
     )
   );
 

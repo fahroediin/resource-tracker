@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabase.js';
 import { fetchAllDivisions, createDivision } from '../lib/store.js';
-import { showToast } from '../lib/ui.js';
+import { showToast, showPromptInput } from '../lib/ui.js';
 
 export async function renderSuperadmin() {
     try {
@@ -18,7 +18,6 @@ export async function renderSuperadmin() {
                 <td style="font-weight:600">${d.name}</td>
                 <td>${new Date(d.created_at).toLocaleDateString()}</td>
                 <td>
-                    <!-- Future: mechanism to assign head, for now just show ID or edit name -->
                     <span style="font-size:12px;color:var(--text-muted)">ID: ${d.id.split('-')[0]}...</span>
                 </td>
             </tr>
@@ -30,7 +29,11 @@ export async function renderSuperadmin() {
 
 export function initSuperadminView() {
     document.getElementById('createDivisionBtn')?.addEventListener('click', async () => {
-        const name = prompt('Enter new division name:');
+        const name = await showPromptInput({
+            title: 'New Division',
+            text: 'Enter the name for the new division',
+            placeholder: 'e.g. Quality Assurance',
+        });
         if (!name || !name.trim()) return;
 
         try {

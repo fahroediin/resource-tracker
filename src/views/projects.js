@@ -1,5 +1,5 @@
 import { fetchMembers, fetchProjects, createProject, updateProject, deleteProject as deleteProjectStore } from '../lib/store.js';
-import { showToast, openModal, closeModal, canEdit, currentDivisionSettings } from '../lib/ui.js';
+import { showToast, showConfirm, openModal, closeModal, canEdit, currentDivisionSettings } from '../lib/ui.js';
 
 let currentTypeFilter = 'all';
 let currentStatusFilter = 'all';
@@ -308,6 +308,23 @@ async function saveProject() {
     if (!name) { showToast('Project name is required', 'error'); return; }
 
     const id = document.getElementById('projectId').value;
+
+    // Duplicate name check
+    const existingProjects = await fetchProjects();
+    const duplicate = existingProjects.find(p =>
+        p.name.toLowerCase() === name.toLowerCase() && p.id !== id
+    );
+    if (duplicate) {
+        const confirmed = await showConfirm({
+            title: 'Duplicate Project Name',
+            text: `A project named "${duplicate.name}" already exists. Do you still want to save?`,
+            icon: 'warning',
+            confirmText: 'Save Anyway',
+            cancelText: 'Cancel',
+        });
+        if (!confirmed) return;
+    }
+
     const allocInputs = document.querySelectorAll('#allocationInputs input[type="number"]');
     const assignments = Array.from(allocInputs).map(input => ({
         memberId: input.dataset.memberId,

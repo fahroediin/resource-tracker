@@ -51,19 +51,61 @@ export function getMemberUtilization(memberId, projects) {
     return total;
 }
 
-// ===== TOAST =====
+// ===== SWEET ALERT =====
+import Swal from 'sweetalert2';
+
+const Toast = Swal.mixin({
+    toast: true,
+    position: 'top-end',
+    showConfirmButton: false,
+    timer: 3000,
+    timerProgressBar: true,
+    didOpen: (toast) => {
+        toast.onmouseenter = Swal.stopTimer;
+        toast.onmouseleave = Swal.resumeTimer;
+    }
+});
 
 export function showToast(message, type = 'success') {
-    const container = document.getElementById('toastContainer');
-    const icons = { success: 'icon-check-circle', error: 'icon-alert-circle', info: 'icon-info' };
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.innerHTML = `<i class="${icons[type] || icons.info}"></i> ${message}`;
-    container.appendChild(toast);
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
+    Toast.fire({
+        icon: type === 'error' ? 'error' : type === 'info' ? 'info' : 'success',
+        title: message,
+    });
+}
+
+export async function showConfirm({ title, text, icon = 'warning', confirmText = 'Yes', cancelText = 'Cancel' } = {}) {
+    const result = await Swal.fire({
+        title,
+        text,
+        icon,
+        showCancelButton: true,
+        confirmButtonText: confirmText,
+        cancelButtonText: cancelText,
+        background: 'var(--bg-secondary)',
+        color: 'var(--text-primary)',
+        confirmButtonColor: '#4a4a4a',
+        cancelButtonColor: 'transparent',
+        customClass: {
+            cancelButton: 'swal-cancel-btn',
+        }
+    });
+    return result.isConfirmed;
+}
+
+export async function showPromptInput({ title, text, placeholder = '', inputType = 'text' } = {}) {
+    const result = await Swal.fire({
+        title,
+        text,
+        input: inputType,
+        inputPlaceholder: placeholder,
+        showCancelButton: true,
+        confirmButtonText: 'OK',
+        background: 'var(--bg-secondary)',
+        color: 'var(--text-primary)',
+        confirmButtonColor: '#4a4a4a',
+        inputAttributes: { style: 'background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--glass-border);border-radius:6px;padding:8px 12px;' },
+    });
+    return result.isConfirmed ? result.value : null;
 }
 
 // ===== MODAL =====
