@@ -1,4 +1,4 @@
-import { fetchMembers, fetchProjects, fetchSkills, createMember, updateMember, deleteMember as deleteMemberStore } from '../lib/store.js';
+import { fetchMembers, fetchProjects, fetchSkills, createMember, updateMember, deleteMember as deleteMemberStore, fetchTasksByMember } from '../lib/store.js';
 import { getInitials, getAvatarColor, getMemberUtilization, getUtilClass, getBarColor, showToast, openModal, closeModal, canEdit } from '../lib/ui.js';
 
 export async function renderMembers() {
@@ -33,12 +33,20 @@ export async function renderMembers() {
                 .slice(0, 3)
                 .map(([k]) => `<span class="skill-tag">${k}</span>`).join('');
 
-            const actions = canEdit() ? `
-        <div class="row-actions">
-          <button title="Edit" data-action="edit-member" data-id="${m.id}"><i class="icon-pencil"></i></button>
-          <button title="Delete" class="delete" data-action="delete-member" data-id="${m.id}"><i class="icon-trash-2"></i></button>
-        </div>
-      ` : '';
+            const editActions = canEdit() ? `
+              <button title="Edit" data-action="edit-member" data-id="${m.id}"><i class="icon-pencil"></i></button>
+              <button title="Delete" class="delete" data-action="delete-member" data-id="${m.id}"><i class="icon-trash-2"></i></button>
+            ` : '';
+
+            const viewTasksBtn = canEdit() ? `
+              <button title="View Tasks" data-action="view-tasks" data-id="${m.id}" data-name="${m.name}" style="color:var(--text-muted);"><i class="icon-list-checks"></i></button>
+            ` : '';
+
+            const actions = (editActions || viewTasksBtn) ? `
+              <div class="row-actions">
+                ${viewTasksBtn}${editActions}
+              </div>
+            ` : '';
 
             return `
         <tr>
@@ -67,6 +75,75 @@ export async function renderMembers() {
     }
 }
 
+// ===== VIEW MEMBER TASKS MODAL =====
+
+async function showMemberTasksModal(memberId, memberName) {
+    const modal = document.getElementById('memberTasksModal');
+    const title = document.getElementById('memberTasksModalTitle');
+    const body = document.getElementById('memberTasksModalBody');
+
+    title.textContent = `Tasks — ${memberName}`;
+    body.innerHTML = `<div style="display:flex;justify-content:center;padding:32px"><div class="loading-spinner" style="width:24px;height:24px;border-width:2px;"></div></div>`;
+    modal.classList.add('active');
+
+    try {
+        const projectGroups = await fetchTasksByMember(memberId);
+
+        if (projectGroups.length === 0) {
+            body.innerHTML = `
+                <div style="text-align:center;padding:32px;color:var(--text-muted);">
+                    <i class="icon-list-checks" style="font-size:36px;display:block;margin-bottom:12px;opacity:0.4;"></i>
+                    <p style="font-size:13px;">Belum ada task untuk member ini.</p>
+                </div>`;
+            return;
+        }
+
+        body.innerHTML = projectGroups.map(group => {
+            const completed = group.tasks.filter(t => t.is_completed).length;
+            const total = group.tasks.length;
+            const allDone = completed === total;
+            const pct = Math.round((completed / total) * 100);
+
+            return `
+                <div class="member-task-group">
+                    <div class="member-task-group-header">
+                        <div>
+                            <div class="member-task-project-name">${escapeHtml(group.projectName)}</div>
+                            <div class="member-task-project-meta">
+                                <span class="badge" style="background:var(--bg-secondary);border:1px solid var(--glass-border);font-size:10px;">${group.projectStatus}</span>
+                                <span style="font-size:11px;color:var(--text-muted);">Alokasi: ${group.allocation}%</span>
+                            </div>
+                        </div>
+                        <div class="member-task-progress">
+                            <span class="task-count ${allDone ? 'all-done' : ''}">${completed}/${total}</span>
+                            <div class="task-progress-bar"><div class="task-progress-fill ${allDone ? 'all-done' : ''}" style="width:${pct}%"></div></div>
+                        </div>
+                    </div>
+                    <div class="member-task-list">
+                        ${group.tasks.map(t => `
+                            <div class="member-task-item ${t.is_completed ? 'completed' : ''}">
+                                <span class="member-task-check">${t.is_completed ? '<i class="icon-check-circle"></i>' : '<i class="icon-circle"></i>'}</span>
+                                <span class="member-task-text">${escapeHtml(t.content)}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+    } catch (err) {
+        body.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-muted);">Gagal memuat tasks: ${err.message}</div>`;
+    }
+}
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+// ===== INIT & EVENTS =====
+
 export function initMembersView() {
     document.getElementById('addMemberBtn')?.addEventListener('click', () => openMemberModal());
 
@@ -80,6 +157,7 @@ export function initMembersView() {
 
         if (action === 'edit-member') await editMember(id);
         if (action === 'delete-member') await handleDeleteMember(id);
+        if (action === 'view-tasks') await showMemberTasksModal(id, btn.dataset.name);
     });
 
     document.getElementById('saveMemberBtn')?.addEventListener('click', saveMember);

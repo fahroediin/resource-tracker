@@ -141,6 +141,86 @@ export async function deleteProject(id) {
     if (error) throw error;
 }
 
+// ===== PROJECT TASKS (Member To-Do) =====
+
+export async function fetchTasksByAssignment(assignmentId) {
+    const { data, error } = await supabase
+        .from('project_tasks')
+        .select('*')
+        .eq('assignment_id', assignmentId)
+        .order('created_at', { ascending: true });
+    if (error) throw error;
+    return data || [];
+}
+
+export async function createTask(assignmentId, content) {
+    const { data, error } = await supabase
+        .from('project_tasks')
+        .insert({ assignment_id: assignmentId, content })
+        .select()
+        .single();
+    if (error) throw error;
+    return data;
+}
+
+export async function toggleTask(taskId, isCompleted) {
+    const { data, error } = await supabase
+        .from('project_tasks')
+        .update({ is_completed: isCompleted })
+        .eq('id', taskId)
+        .select()
+        .single();
+    if (error) throw error;
+    return data;
+}
+
+export async function updateTaskContent(taskId, content) {
+    const { data, error } = await supabase
+        .from('project_tasks')
+        .update({ content })
+        .eq('id', taskId)
+        .select()
+        .single();
+    if (error) throw error;
+    return data;
+}
+
+export async function deleteTask(taskId) {
+    const { error } = await supabase
+        .from('project_tasks')
+        .delete()
+        .eq('id', taskId);
+    if (error) throw error;
+}
+
+export async function fetchTasksByMember(memberId) {
+    // Get all assignments for this member
+    const { data: assignments, error: aErr } = await supabase
+        .from('project_assignments')
+        .select('id, project_id, allocation, projects(id, name, status)')
+        .eq('member_id', memberId);
+    if (aErr) throw aErr;
+    if (!assignments || assignments.length === 0) return [];
+
+    // Get all tasks for these assignments
+    const assignmentIds = assignments.map(a => a.id);
+    const { data: tasks, error: tErr } = await supabase
+        .from('project_tasks')
+        .select('*')
+        .in('assignment_id', assignmentIds)
+        .order('created_at', { ascending: true });
+    if (tErr) throw tErr;
+
+    // Group tasks by project
+    return assignments.map(a => ({
+        assignmentId: a.id,
+        projectName: a.projects?.name || 'Unknown',
+        projectStatus: a.projects?.status || '—',
+        allocation: a.allocation,
+        tasks: (tasks || []).filter(t => t.assignment_id === a.id),
+    })).filter(g => g.tasks.length > 0);
+}
+
 // ===== SKILLS =====
 
 export async function fetchSkills() {

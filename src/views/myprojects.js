@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase.js';
 import { showToast, getCurrentUserProfile } from '../lib/ui.js';
+import { fetchTasksByAssignment, createTask, toggleTask, deleteTask } from '../lib/store.js';
 
 // Fetch the member record linked to the logged-in user by email
 async function getMyMemberRecord() {
@@ -24,6 +25,123 @@ async function getMyAssignments(memberId) {
 
     if (error) throw error;
     return data || [];
+}
+
+// Render task list for a specific assignment card
+async function renderTaskSection(cardEl, assignmentId) {
+    const taskContainer = cardEl.querySelector('.task-section-body');
+    if (!taskContainer) return;
+
+    taskContainer.innerHTML = `<div style="display:flex;justify-content:center;padding:12px"><div class="loading-spinner" style="width:18px;height:18px;border-width:2px;"></div></div>`;
+
+    try {
+        const tasks = await fetchTasksByAssignment(assignmentId);
+        const completedCount = tasks.filter(t => t.is_completed).length;
+        const totalCount = tasks.length;
+        const allDone = totalCount > 0 && completedCount === totalCount;
+        const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+        // Update progress header
+        const progressEl = cardEl.querySelector('.task-progress-info');
+        if (progressEl) {
+            progressEl.innerHTML = totalCount > 0
+                ? `<span class="task-count ${allDone ? 'all-done' : ''}">${completedCount}/${totalCount}</span>
+                   <div class="task-progress-bar"><div class="task-progress-fill ${allDone ? 'all-done' : ''}" style="width:${progressPct}%"></div></div>
+                   ${allDone ? '<span class="task-done-badge"><i class="icon-check-circle"></i> Semua selesai!</span>' : ''}`
+                : `<span class="task-count">0 task</span>`;
+        }
+
+        // Show completion hint
+        const hintEl = cardEl.querySelector('.task-completion-hint');
+        if (hintEl) {
+            hintEl.style.display = allDone && totalCount > 0 ? 'flex' : 'none';
+        }
+
+        taskContainer.innerHTML = `
+            <div class="task-list">
+                ${tasks.map(t => `
+                    <div class="task-item ${t.is_completed ? 'completed' : ''}" data-task-id="${t.id}">
+                        <label class="task-checkbox-label">
+                            <input type="checkbox" class="task-checkbox" ${t.is_completed ? 'checked' : ''} data-task-id="${t.id}">
+                            <span class="task-checkmark"><i class="icon-check"></i></span>
+                        </label>
+                        <span class="task-content">${escapeHtml(t.content)}</span>
+                        <button class="task-delete-btn" data-task-id="${t.id}" title="Hapus task">
+                            <i class="icon-trash-2"></i>
+                        </button>
+                    </div>
+                `).join('')}
+            </div>
+            <div class="task-input-row">
+                <input type="text" class="task-input" placeholder="Tambah task baru..." data-assignment-id="${assignmentId}">
+                <button class="btn btn-sm task-add-btn" data-assignment-id="${assignmentId}">
+                    <i class="icon-plus"></i>
+                </button>
+            </div>
+        `;
+
+        // Wire checkbox toggles
+        taskContainer.querySelectorAll('.task-checkbox').forEach(cb => {
+            cb.addEventListener('change', async () => {
+                const taskId = cb.dataset.taskId;
+                try {
+                    await toggleTask(taskId, cb.checked);
+                    await renderTaskSection(cardEl, assignmentId);
+                } catch (err) {
+                    showToast(err.message || 'Gagal mengubah status task', 'error');
+                    cb.checked = !cb.checked;
+                }
+            });
+        });
+
+        // Wire delete buttons
+        taskContainer.querySelectorAll('.task-delete-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const taskId = btn.dataset.taskId;
+                try {
+                    await deleteTask(taskId);
+                    await renderTaskSection(cardEl, assignmentId);
+                    showToast('Task dihapus');
+                } catch (err) {
+                    showToast(err.message || 'Gagal menghapus task', 'error');
+                }
+            });
+        });
+
+        // Wire add task
+        const input = taskContainer.querySelector('.task-input');
+        const addBtn = taskContainer.querySelector('.task-add-btn');
+
+        const handleAdd = async () => {
+            const content = input.value.trim();
+            if (!content) return;
+            input.disabled = true;
+            addBtn.disabled = true;
+            try {
+                await createTask(assignmentId, content);
+                await renderTaskSection(cardEl, assignmentId);
+                showToast('Task ditambahkan');
+            } catch (err) {
+                showToast(err.message || 'Gagal menambah task', 'error');
+                input.disabled = false;
+                addBtn.disabled = false;
+            }
+        };
+
+        addBtn.addEventListener('click', handleAdd);
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') handleAdd();
+        });
+
+    } catch (err) {
+        taskContainer.innerHTML = `<div style="color:var(--text-muted);font-size:12px;padding:8px;">Gagal memuat task: ${err.message}</div>`;
+    }
+}
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
 }
 
 export async function renderMyProjects() {
@@ -61,7 +179,8 @@ export async function renderMyProjects() {
             <div class="glass-card" style="margin-bottom:20px;padding:16px 20px;display:flex;align-items:center;gap:12px;">
                 <i class="icon-info" style="color:var(--text-muted);font-size:18px;flex-shrink:0;"></i>
                 <p style="font-size:13px;color:var(--text-secondary);margin:0;">
-                    Update the <strong>allocation %</strong> to reflect how much of your working time is spent on each project. Click <strong>Save</strong> after editing.
+                    Update the <strong>allocation %</strong> to reflect how much of your working time is spent on each project. 
+                    Use the <strong>task to-do</strong> to track what needs to be done. When all tasks are completed, set allocation to <strong>0%</strong>.
                 </p>
             </div>
             <div class="my-projects-grid" id="myProjectsList">
@@ -100,6 +219,24 @@ export async function renderMyProjects() {
                                 <i class="icon-save"></i> Save
                             </button>
                         </div>
+
+                        <!-- Task To-Do Section -->
+                        <div class="task-section">
+                            <div class="task-section-header">
+                                <div class="task-section-title">
+                                    <i class="icon-list-checks"></i>
+                                    <span>Task To-Do</span>
+                                </div>
+                                <div class="task-progress-info">
+                                    <span class="task-count">Loading...</span>
+                                </div>
+                            </div>
+                            <div class="task-section-body"></div>
+                            <div class="task-completion-hint" style="display:none;">
+                                <i class="icon-info"></i>
+                                <span>Semua task sudah selesai! Anda bisa mengubah alokasi menjadi <strong>0%</strong>.</span>
+                            </div>
+                        </div>
                     </div>`;
                 }).join('')}
             </div>`;
@@ -137,6 +274,12 @@ export async function renderMyProjects() {
                     btn.innerHTML = '<i class="icon-save"></i> Save';
                 }
             });
+        });
+
+        // Load tasks for each project card
+        container.querySelectorAll('.my-project-card').forEach(card => {
+            const assignmentId = card.dataset.assignmentId;
+            renderTaskSection(card, assignmentId);
         });
 
     } catch (err) {
