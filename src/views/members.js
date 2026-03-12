@@ -1,6 +1,9 @@
 import { fetchMembers, fetchProjects, fetchSkills, createMember, updateMember, deleteMember as deleteMemberStore, fetchTasksByMember } from '../lib/store.js';
 import { getInitials, getAvatarColor, getMemberUtilization, getUtilClass, getBarColor, showToast, openModal, closeModal, canEdit } from '../lib/ui.js';
 
+let currentPage = 1;
+const itemsPerPage = 8;
+
 export async function renderMembers() {
     try {
         const members = await fetchMembers();
@@ -11,17 +14,33 @@ export async function renderMembers() {
         const tbody = document.getElementById('membersTableBody');
         const empty = document.getElementById('membersEmpty');
         const addBtn = document.getElementById('addMemberBtn');
+        const pagination = document.getElementById('membersPagination');
 
         if (addBtn) addBtn.style.display = canEdit() ? '' : 'none';
 
         if (filtered.length === 0) {
             tbody.innerHTML = '';
             empty.style.display = 'block';
+            if (pagination) pagination.style.display = 'none';
             return;
         }
 
         empty.style.display = 'none';
-        tbody.innerHTML = filtered.map((m, i) => {
+        if (pagination) pagination.style.display = 'flex';
+
+        // Pagination calculations
+        const totalItems = filtered.length;
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+        
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+        const paginatedMembers = filtered.slice(startIndex, endIndex);
+
+        tbody.innerHTML = paginatedMembers.map((m, i) => {
+            const actualIndex = startIndex + i;
             const util = getMemberUtilization(m.id, projects);
             const utilCls = getUtilClass(util);
             const statusMap = { 'Available': 'badge-available', 'Assigned': 'badge-assigned', 'On Leave': 'badge-leave', 'Training': 'badge-training' };
@@ -52,7 +71,7 @@ export async function renderMembers() {
         <tr>
           <td>
             <div class="member-inline">
-              <div class="member-inline-avatar" style="background:${getAvatarColor(i)}">${getInitials(m.name)}</div>
+              <div class="member-inline-avatar" style="background:${getAvatarColor(actualIndex)}">${getInitials(m.name)}</div>
               <div>
                 <div style="font-weight:600">${m.name}</div>
                 <div style="font-size:11px;color:var(--text-muted)">${m.email || ''}</div>
@@ -70,9 +89,37 @@ export async function renderMembers() {
         </tr>
       `;
         }).join('');
+        
+        // Render pagination controls
+        renderPaginationControls(totalItems, totalPages, startIndex, endIndex);
+
     } catch (err) {
         console.error('Members render error:', err);
     }
+}
+
+function renderPaginationControls(totalItems, totalPages, startIndex, endIndex) {
+    const pageInfo = document.getElementById('membersPageInfo');
+    if (!pageInfo) return;
+
+    pageInfo.textContent = `Showing ${startIndex + 1}-${endIndex} of ${totalItems} members`;
+
+    const prevBtn = document.getElementById('membersPrevBtn');
+    const nextBtn = document.getElementById('membersNextBtn');
+    const pageNumbers = document.getElementById('membersPageNumbers');
+
+    prevBtn.disabled = currentPage === 1;
+    nextBtn.disabled = currentPage === totalPages;
+
+    let pagesHTML = '';
+    for (let i = 1; i <= totalPages; i++) {
+        if (totalPages <= 7 || (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1))) {
+            pagesHTML += `<button class="pagination-btn ${i === currentPage ? 'active' : ''}" data-page="${i}">${i}</button>`;
+        } else if (i === currentPage - 2 || i === currentPage + 2) {
+            pagesHTML += `<span style="color:var(--text-muted);align-self:end;padding-bottom:4px">...</span>`;
+        }
+    }
+    pageNumbers.innerHTML = pagesHTML;
 }
 
 // ===== VIEW MEMBER TASKS MODAL =====
@@ -147,7 +194,10 @@ function escapeHtml(str) {
 export function initMembersView() {
     document.getElementById('addMemberBtn')?.addEventListener('click', () => openMemberModal());
 
-    document.getElementById('memberSearch')?.addEventListener('input', () => renderMembers());
+    document.getElementById('memberSearch')?.addEventListener('input', () => {
+        currentPage = 1;
+        renderMembers();
+    });
 
     document.getElementById('membersTableBody')?.addEventListener('click', async (e) => {
         const btn = e.target.closest('[data-action]');
@@ -161,6 +211,22 @@ export function initMembersView() {
     });
 
     document.getElementById('saveMemberBtn')?.addEventListener('click', saveMember);
+
+    // Pagination events
+    document.getElementById('membersPrevBtn')?.addEventListener('click', () => {
+        if (currentPage > 1) { currentPage--; renderMembers(); }
+    });
+    
+    document.getElementById('membersNextBtn')?.addEventListener('click', () => {
+        currentPage++; renderMembers();
+    });
+
+    document.getElementById('membersPageNumbers')?.addEventListener('click', (e) => {
+        const btn = e.target.closest('.pagination-btn');
+        if (!btn || btn.classList.contains('active')) return;
+        currentPage = parseInt(btn.dataset.page, 10);
+        renderMembers();
+    });
 }
 
 async function openMemberModal(member = null) {

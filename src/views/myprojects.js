@@ -2,6 +2,9 @@ import { supabase } from '../lib/supabase.js';
 import { showToast, getCurrentUserProfile } from '../lib/ui.js';
 import { fetchTasksByAssignment, createTask, toggleTask, deleteTask } from '../lib/store.js';
 
+let currentPage = 1;
+const itemsPerPage = 8;
+
 // Fetch the member record linked to the logged-in user by email
 async function getMyMemberRecord() {
     const { data: { user } } = await supabase.auth.getUser();
@@ -175,6 +178,17 @@ export async function renderMyProjects() {
             return;
         }
 
+        // Pagination calculations
+        const totalItems = assignments.length;
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+        
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+        const paginatedAssignments = assignments.slice(startIndex, endIndex);
+
         container.innerHTML = `
             <div class="glass-card" style="margin-bottom:20px;padding:16px 20px;display:flex;align-items:center;gap:12px;">
                 <i class="icon-info" style="color:var(--text-muted);font-size:18px;flex-shrink:0;"></i>
@@ -184,7 +198,7 @@ export async function renderMyProjects() {
                 </p>
             </div>
             <div class="my-projects-grid" id="myProjectsList">
-                ${assignments.map(a => {
+                ${paginatedAssignments.map(a => {
                     const p = a.projects;
                     const typeMap = { 'Internal': 'badge-internal', 'External': 'badge-external', 'POC': 'badge-poc' };
                     return `
@@ -239,7 +253,40 @@ export async function renderMyProjects() {
                         </div>
                     </div>`;
                 }).join('')}
+            </div>
+            <!-- Pagination Controls -->
+            <div class="pagination-container" id="myprojectsPagination" style="display:${totalPages > 1 ? 'flex' : 'none'}; justify-content: space-between; align-items: center; padding: 16px; border-top: 1px solid var(--glass-border); margin-top: 16px;">
+                <div class="pagination-info" id="myprojectsPageInfo" style="font-size: 13px; color: var(--text-muted);">
+                    Showing ${startIndex + 1}-${endIndex} of ${totalItems} projects
+                </div>
+                <div class="pagination-buttons" style="display: flex; gap: 8px;">
+                    <button class="btn btn-secondary btn-sm" id="myprojectsPrevBtn" ${currentPage === 1 ? 'disabled' : ''}>
+                        <i class="icon-chevron-left"></i> Prev
+                    </button>
+                    <div id="myprojectsPageNumbers" style="display: flex; gap: 4px;">
+                        ${generatePageNumbers(currentPage, totalPages)}
+                    </div>
+                    <button class="btn btn-secondary btn-sm" id="myprojectsNextBtn" ${currentPage === totalPages ? 'disabled' : ''}>
+                        Next <i class="icon-chevron-right"></i>
+                    </button>
+                </div>
             </div>`;
+
+        // Wire up event listeners for newly rendered pagination
+        container.querySelector('#myprojectsPrevBtn')?.addEventListener('click', () => {
+            if (currentPage > 1) { currentPage--; renderMyProjects(); }
+        });
+
+        container.querySelector('#myprojectsNextBtn')?.addEventListener('click', () => {
+            currentPage++; renderMyProjects();
+        });
+
+        container.querySelector('#myprojectsPageNumbers')?.addEventListener('click', (e) => {
+            const btn = e.target.closest('.pagination-btn');
+            if (!btn || btn.classList.contains('active')) return;
+            currentPage = parseInt(btn.dataset.page, 10);
+            renderMyProjects();
+        });
 
         // Wire up sliders → display
         container.querySelectorAll('.allocation-slider').forEach(slider => {
@@ -286,6 +333,18 @@ export async function renderMyProjects() {
         console.error('My Projects error:', err);
         container.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted);">Failed to load projects: ${err.message}</div>`;
     }
+}
+
+function generatePageNumbers(current, total) {
+    let html = '';
+    for (let i = 1; i <= total; i++) {
+        if (total <= 7 || (i === 1 || i === total || (i >= current - 1 && i <= current + 1))) {
+            html += `<button class="pagination-btn ${i === current ? 'active' : ''}" data-page="${i}">${i}</button>`;
+        } else if (i === current - 2 || i === current + 2) {
+            html += `<span style="color:var(--text-muted);align-self:end;padding-bottom:4px">...</span>`;
+        }
+    }
+    return html;
 }
 
 export function initMyProjectsView() {

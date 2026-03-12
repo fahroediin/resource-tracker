@@ -136,7 +136,13 @@
         <div class="stats-grid" id="statsGrid"></div>
         <div class="dashboard-grid">
           <div class="glass-card">
-            <div class="section-title"><i class="icon-bar-chart-3"></i> Team Utilization</div>
+            <div class="section-title" style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
+              <div><i class="icon-bar-chart-3"></i> Team Utilization</div>
+              <div class="filter-tabs" id="dashUtilFilterTabs" style="transform: scale(0.85); transform-origin: right center;">
+                <button class="filter-tab active" data-filter="highest">Highest</button>
+                <button class="filter-tab" data-filter="lowest">Lowest</button>
+              </div>
+            </div>
             <div class="utilization-list" id="utilizationList"></div>
           </div>
           <div class="glass-card">
@@ -186,6 +192,19 @@
               </thead>
               <tbody id="membersTableBody"></tbody>
             </table>
+          </div>
+          <!-- Pagination Controls -->
+          <div class="pagination-container" id="membersPagination" style="display:none; justify-content: space-between; align-items: center; padding: 16px; border-top: 1px solid var(--glass-border);">
+            <div class="pagination-info" id="membersPageInfo" style="font-size: 13px; color: var(--text-muted);"></div>
+            <div class="pagination-buttons" style="display: flex; gap: 8px;">
+              <button class="btn btn-secondary btn-sm" id="membersPrevBtn" disabled>
+                <i class="icon-chevron-left"></i> Prev
+              </button>
+              <div id="membersPageNumbers" style="display: flex; gap: 4px;"></div>
+              <button class="btn btn-secondary btn-sm" id="membersNextBtn">
+                Next <i class="icon-chevron-right"></i>
+              </button>
+            </div>
           </div>
           <div class="empty-state" id="membersEmpty" style="display:none;">
             <i class="icon-users"></i>
@@ -344,6 +363,19 @@
               <tbody id="usersTableBody"></tbody>
             </table>
           </div>
+          <!-- Pagination Controls -->
+          <div class="pagination-container" id="usersPagination" style="display:none; justify-content: space-between; align-items: center; padding: 16px; border-top: 1px solid var(--glass-border);">
+            <div class="pagination-info" id="usersPageInfo" style="font-size: 13px; color: var(--text-muted);"></div>
+            <div class="pagination-buttons" style="display: flex; gap: 8px;">
+              <button class="btn btn-secondary btn-sm" id="usersPrevBtn" disabled>
+                <i class="icon-chevron-left"></i> Prev
+              </button>
+              <div id="usersPageNumbers" style="display: flex; gap: 4px;"></div>
+              <button class="btn btn-secondary btn-sm" id="usersNextBtn">
+                Next <i class="icon-chevron-right"></i>
+              </button>
+            </div>
+          </div>
           <div class="empty-state" id="usersEmpty" style="display:none;">
             <i class="icon-shield"></i>
             <h3>No users</h3>
@@ -391,6 +423,19 @@
               </thead>
               <tbody id="divisionsTableBody"></tbody>
             </table>
+          </div>
+          <!-- Pagination Controls -->
+          <div class="pagination-container" id="divisionsPagination" style="display:none; justify-content: space-between; align-items: center; padding: 16px; border-top: 1px solid var(--glass-border);">
+            <div class="pagination-info" id="divisionsPageInfo" style="font-size: 13px; color: var(--text-muted);"></div>
+            <div class="pagination-buttons" style="display: flex; gap: 8px;">
+              <button class="btn btn-secondary btn-sm" id="divisionsPrevBtn" disabled>
+                <i class="icon-chevron-left"></i> Prev
+              </button>
+              <div id="divisionsPageNumbers" style="display: flex; gap: 4px;"></div>
+              <button class="btn btn-secondary btn-sm" id="divisionsNextBtn">
+                Next <i class="icon-chevron-right"></i>
+              </button>
+            </div>
           </div>
         </div>
       </section>

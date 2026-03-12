@@ -2,6 +2,7 @@ import { fetchMembers, fetchProjects } from '../lib/store.js';
 import { getInitials, getAvatarColor, getMemberUtilization, getUtilClass } from '../lib/ui.js';
 
 let currentDashFilter = 'all';
+let currentUtilFilter = 'highest';
 
 export async function renderDashboard() {
     try {
@@ -59,15 +60,23 @@ export async function renderDashboard() {
         if (members.length === 0) {
             utilList.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">No members yet</p>';
         } else {
-            utilList.innerHTML = members.map((m, i) => {
-                const util = getMemberUtilization(m.id, projects);
-                const cls = getUtilClass(util);
+            // Calculate utilization, sort depending on current filter, and take the top 5
+            const topUtilMembers = members
+                .map(m => ({
+                    ...m,
+                    util: getMemberUtilization(m.id, projects)
+                }))
+                .sort((a, b) => currentUtilFilter === 'highest' ? b.util - a.util : a.util - b.util)
+                .slice(0, 5);
+
+            utilList.innerHTML = topUtilMembers.map((m, i) => {
+                const cls = getUtilClass(m.util);
                 return `
           <div class="utilization-item">
             <div class="util-avatar" style="background:${getAvatarColor(i)}">${getInitials(m.name)}</div>
             <div class="util-info">
-              <div class="util-name"><span>${m.name}</span><span class="util-pct">${util}%</span></div>
-              <div class="util-bar"><div class="util-fill ${cls}" style="width:${Math.min(util, 100)}%"></div></div>
+              <div class="util-name"><span>${m.name}</span><span class="util-pct">${m.util}%</span></div>
+              <div class="util-bar"><div class="util-fill ${cls}" style="width:${Math.min(m.util, 100)}%"></div></div>
             </div>
           </div>
         `;
@@ -124,6 +133,20 @@ export async function renderDashboard() {
                 if (!tab) return;
                 currentDashFilter = tab.dataset.filter;
                 filterContainer.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                renderDashboard();
+            });
+        }
+
+        // Initialize dashboard utilization filter events only once
+        const utilFilterContainer = document.getElementById('dashUtilFilterTabs');
+        if (utilFilterContainer && !utilFilterContainer.dataset.bound) {
+            utilFilterContainer.dataset.bound = 'true';
+            utilFilterContainer.addEventListener('click', (e) => {
+                const tab = e.target.closest('.filter-tab');
+                if (!tab) return;
+                currentUtilFilter = tab.dataset.filter;
+                utilFilterContainer.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
                 renderDashboard();
             });
