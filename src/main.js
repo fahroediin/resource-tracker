@@ -12,6 +12,7 @@ import { renderUsers, initUsersView } from './views/users.js';
 import { renderSettings, initSettingsView } from './views/settings.js';
 import { renderSuperadmin, initSuperadminView } from './views/superadmin.js';
 import { renderMyProjects, initMyProjectsView } from './views/myprojects.js';
+import { renderReports, initReportsView } from './views/reports.js';
 
 // Register view renderers
 registerViewRenderer('dashboard', renderDashboard);
@@ -23,6 +24,7 @@ registerViewRenderer('users', renderUsers);
 registerViewRenderer('settings', renderSettings);
 registerViewRenderer('superadmin', renderSuperadmin);
 registerViewRenderer('myprojects', renderMyProjects);
+registerViewRenderer('reports', renderReports);
 
 // ===== APP INIT =====
 
@@ -36,6 +38,7 @@ async function initApp() {
     initSettingsView();
     initSuperadminView();
     initMyProjectsView();
+    initReportsView();
 
     // Bind sidebar nav
     document.querySelectorAll('.nav-item[data-view]').forEach(item => {
@@ -148,6 +151,13 @@ async function showApp() {
     if (myProjectsNav) {
         const canSeeMyProjects = user.profile?.role === 'member';
         myProjectsNav.style.display = canSeeMyProjects ? '' : 'none';
+    }
+
+    // Show/hide Reports nav — only for head/admin
+    const reportsNav = document.querySelector('.nav-item[data-view="reports"]');
+    if (reportsNav) {
+        const canSeeReports = user.profile?.role === 'admin' || user.profile?.role === 'head';
+        reportsNav.style.display = canSeeReports ? '' : 'none';
     }
 
     const appSection = document.getElementById('appSection');

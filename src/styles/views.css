@@ -788,6 +788,130 @@
     word-break: break-word;
 }
 
+/* ===== REPORTS PAGE ===== */
+.reports-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+}
+
+.report-card {
+    display: flex;
+    flex-direction: column;
+    transition: border-color 0.2s ease;
+}
+
+.report-card:hover {
+    border-color: rgba(255, 255, 255, 0.14);
+}
+
+.report-card-header {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+.report-card-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: var(--radius);
+    background: rgba(255, 255, 255, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.report-card-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.report-card-title {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.report-card-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+.report-card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid var(--glass-border);
+}
+
+.report-card-actions .btn {
+    flex: 1;
+    justify-content: center;
+}
+
+/* Report preview table */
+.report-card-preview {
+    margin-bottom: 16px;
+    animation: taskSlideIn 0.2s ease;
+}
+
+.report-preview-table-wrap {
+    max-height: 280px;
+    overflow-y: auto;
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm);
+}
+
+.report-preview-table-wrap::-webkit-scrollbar {
+    width: 4px;
+}
+
+.report-preview-table-wrap::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+}
+
+.report-preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+}
+
+.report-preview-table th {
+    position: sticky;
+    top: 0;
+    background: var(--bg-secondary);
+    padding: 8px 10px;
+    text-align: left;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    font-weight: 600;
+    border-bottom: 1px solid var(--glass-border);
+    white-space: nowrap;
+}
+
+.report-preview-table td {
+    padding: 6px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    color: var(--text-secondary);
+    white-space: nowrap;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.report-preview-table tr:hover td {
+    background: rgba(255, 255, 255, 0.02);
+}
+
 /* Input row */
 .task-input-row {
     display: flex;
