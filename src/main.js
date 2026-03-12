@@ -6,7 +6,7 @@ import { initAuthView } from './views/auth.js';
 import { renderDashboard } from './views/dashboard.js';
 import { renderMembers, initMembersView } from './views/members.js';
 import { renderProjects, initProjectsView } from './views/projects.js';
-import { renderCapacity } from './views/capacity.js';
+import { renderCapacity, initCapacityView } from './views/capacity.js';
 import { renderSkillsMatrix, initSkillsView } from './views/skills.js';
 import { renderUsers, initUsersView } from './views/users.js';
 import { renderSettings, initSettingsView } from './views/settings.js';
@@ -33,6 +33,7 @@ async function initApp() {
     initAuthView();
     initMembersView();
     initProjectsView();
+    initCapacityView();
     initSkillsView();
     initUsersView();
     initSettingsView();

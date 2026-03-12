@@ -7,15 +7,31 @@ export async function renderCapacity() {
         const projects = await fetchProjects();
         const grid = document.getElementById('capacityGrid');
         const empty = document.getElementById('capacityEmpty');
+        const searchInput = document.getElementById('capacitySearch');
 
         if (members.length === 0) {
             grid.innerHTML = '';
             empty.style.display = 'block';
+            if (searchInput) searchInput.parentElement.style.display = 'none';
+            return;
+        }
+
+        if (searchInput) searchInput.parentElement.style.display = 'flex';
+
+        // Apply search filter
+        const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+        const filteredMembers = members.filter(m => m.name.toLowerCase().includes(searchTerm) || m.role.toLowerCase().includes(searchTerm));
+
+        if (filteredMembers.length === 0) {
+            grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted); font-size: 14px;">No members match your search.</div>';
+            empty.style.display = 'none';
             return;
         }
 
         empty.style.display = 'none';
-        grid.innerHTML = members.map((m, i) => {
+        grid.innerHTML = filteredMembers.map((m) => {
+            // Find actual index in original array for consistent avatar colors
+            const originalIndex = members.findIndex(orig => orig.id === m.id);
             const util = getMemberUtilization(m.id, projects);
             const status = getCapacityStatus(util);
             const barColor = getBarColor(util);
@@ -32,7 +48,7 @@ export async function renderCapacity() {
         <div class="capacity-card">
           <div class="capacity-header">
             <div class="capacity-member">
-              <div class="capacity-avatar" style="background:${getAvatarColor(i)}">${getInitials(m.name)}</div>
+              <div class="capacity-avatar" style="background:${getAvatarColor(originalIndex)}">${getInitials(m.name)}</div>
               <div>
                 <div class="capacity-name">${m.name}</div>
                 <div class="capacity-role">${m.role}</div>
@@ -52,5 +68,14 @@ export async function renderCapacity() {
         }).join('');
     } catch (err) {
         console.error('Capacity render error:', err);
+    }
+}
+
+export function initCapacityView() {
+    const searchInput = document.getElementById('capacitySearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', () => {
+            renderCapacity();
+        });
     }
 }
