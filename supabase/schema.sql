@@ -76,6 +76,7 @@ create table if not exists public.profiles (
   created_at timestamptz not null default now()
 );
 alter table public.profiles add column if not exists division_id uuid references public.divisions(id) on delete set null;
+alter table public.profiles add column if not exists email text;
 -- Update role constraint to include superadmin
 alter table public.profiles drop constraint if exists profiles_role_check;
 alter table public.profiles add constraint profiles_role_check
@@ -415,11 +416,12 @@ create policy "Users can insert logs for their division"
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
-  insert into public.profiles (id, full_name, role)
+  insert into public.profiles (id, full_name, role, email)
   values (
     new.id,
     coalesce(new.raw_user_meta_data->>'full_name', ''),
-    coalesce(new.raw_user_meta_data->>'role', 'member')
+    coalesce(new.raw_user_meta_data->>'role', 'member'),
+    new.email
   );
   return new;
 end;

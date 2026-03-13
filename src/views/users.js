@@ -1,8 +1,37 @@
 import { fetchProfiles, updateProfile, deleteProfile } from '../lib/store.js';
-import { getInitials, getAvatarColor, showToast, openModal, closeModal, isAdmin, getCurrentUserProfile } from '../lib/ui.js';
+import { getInitials, getAvatarColor, showToast, showConfirm, openModal, closeModal, isAdmin, getCurrentUserProfile } from '../lib/ui.js';
+import { supabase } from '../lib/supabase.js';
 
 let currentPage = 1;
 const itemsPerPage = 8;
+
+// Check if the current user can reset password for a target profile
+function canResetPassword(targetProfile) {
+    const currentUser = getCurrentUserProfile();
+    if (!currentUser || !targetProfile) return false;
+    if (currentUser.id === targetProfile.id) return false;
+
+    // Superadmin can reset admin/head in any division
+    if (currentUser.role === 'superadmin') {
+        return ['admin', 'head', 'member'].includes(targetProfile.role);
+    }
+
+    // Admin can reset member/head in their division
+    if (currentUser.role === 'admin') {
+        return targetProfile.role === 'member' &&
+            currentUser.division_id &&
+            currentUser.division_id === targetProfile.division_id;
+    }
+
+    // Head can reset member in their division
+    if (currentUser.role === 'head') {
+        return targetProfile.role === 'member' &&
+            currentUser.division_id &&
+            currentUser.division_id === targetProfile.division_id;
+    }
+
+    return false;
+}
 
 export async function renderUsers() {
     try {
@@ -37,18 +66,25 @@ export async function renderUsers() {
         tbody.innerHTML = paginatedProfiles.map((p, i) => {
             const actualIndex = startIndex + i;
             const roleBadge = {
+                superadmin: 'badge-superadmin',
                 admin: 'badge-admin',
                 head: 'badge-head',
                 member: 'badge-member',
             };
             const isSelf = currentUser?.id === p.id;
 
-            const actions = isAdmin() && !isSelf ? `
-        <div class="row-actions">
-          <button title="Change Role" data-action="edit-user" data-id="${p.id}"><i class="icon-shield"></i></button>
-          <button title="Delete" class="delete" data-action="delete-user" data-id="${p.id}"><i class="icon-trash-2"></i></button>
-        </div>
-      ` : (isSelf ? '<span style="font-size:11px;color:var(--text-muted)">You</span>' : '');
+            const resetBtn = canResetPassword(p) ? `
+              <button title="Reset Password" data-action="reset-password" data-id="${p.id}" data-email="${p.email || ''}" data-name="${p.full_name || 'Unknown'}"><i class="icon-key-round"></i></button>
+            ` : '';
+
+            const editDeleteBtns = isAdmin() && !isSelf ? `
+              <button title="Change Role" data-action="edit-user" data-id="${p.id}"><i class="icon-shield"></i></button>
+              <button title="Delete" class="delete" data-action="delete-user" data-id="${p.id}"><i class="icon-trash-2"></i></button>
+            ` : '';
+
+            const actions = (resetBtn || editDeleteBtns)
+                ? `<div class="row-actions">${resetBtn}${editDeleteBtns}</div>`
+                : (isSelf ? '<span style="font-size:11px;color:var(--text-muted)">You</span>' : '');
 
             return `
         <tr>
@@ -57,6 +93,7 @@ export async function renderUsers() {
               <div class="member-inline-avatar" style="background:${getAvatarColor(actualIndex)}">${getInitials(p.full_name || 'U')}</div>
               <div>
                 <div style="font-weight:600">${p.full_name || 'Unknown'}</div>
+                <div style="font-size:11px;color:var(--text-muted)">${p.email || ''}</div>
               </div>
             </div>
           </td>
@@ -108,6 +145,7 @@ export function initUsersView() {
 
         if (action === 'edit-user') await openRoleModal(id);
         if (action === 'delete-user') await handleDeleteUser(id);
+        if (action === 'reset-password') await handleResetPassword(btn.dataset.email, btn.dataset.name);
     });
 
     document.getElementById('saveUserRoleBtn')?.addEventListener('click', saveUserRole);
@@ -155,12 +193,43 @@ async function saveUserRole() {
 }
 
 async function handleDeleteUser(id) {
-    if (!confirm('Delete this user profile? This action cannot be undone.')) return;
+    const confirmed = await showConfirm({
+        title: 'Delete User?',
+        text: 'This action cannot be undone.',
+        confirmText: 'Delete',
+    });
+    if (!confirmed) return;
+
     try {
         await deleteProfile(id);
         showToast('User deleted');
         await renderUsers();
     } catch (err) {
         showToast(err.message || 'Failed to delete user', 'error');
+    }
+}
+
+async function handleResetPassword(email, name) {
+    if (!email) {
+        showToast('Email tidak ditemukan untuk user ini. Jalankan migration_reset_password.sql terlebih dahulu.', 'error');
+        return;
+    }
+
+    const confirmed = await showConfirm({
+        title: 'Reset Password?',
+        text: `Kirim email reset password ke ${name} (${email})?`,
+        icon: 'question',
+        confirmText: 'Kirim Reset Email',
+    });
+    if (!confirmed) return;
+
+    try {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: window.location.origin,
+        });
+        if (error) throw error;
+        showToast(`Email reset password telah dikirim ke ${email}`);
+    } catch (err) {
+        showToast(err.message || 'Gagal mengirim reset password', 'error');
     }
 }
