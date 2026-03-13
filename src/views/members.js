@@ -1,5 +1,5 @@
 import { fetchMembers, fetchProjects, fetchSkills, createMember, updateMember, deleteMember as deleteMemberStore, fetchTasksByMember } from '../lib/store.js';
-import { getInitials, getAvatarColor, getMemberUtilization, getUtilClass, getBarColor, showToast, openModal, closeModal, canEdit } from '../lib/ui.js';
+import { getInitials, getAvatarColor, getMemberUtilization, getUtilClass, currentDivisionSettings, renderBlockIndicator, showToast, openModal, closeModal, canEdit } from '../lib/ui.js';
 
 let currentPage = 1;
 const itemsPerPage = 8;
@@ -81,8 +81,16 @@ export async function renderMembers() {
           <td>${m.role}</td>
           <td><span class="badge ${statusMap[m.status] || ''}">${m.status}</span></td>
           <td>
-            <span style="font-weight:600;color:${util > 100 ? 'var(--accent-rose)' : 'var(--text-primary)'}">${util}%</span>
-            <div class="pct-bar-inline"><div class="pct-bar-inline-fill" style="width:${Math.min(util, 100)}%;background:${getBarColor(util)}"></div></div>
+            <span style="font-weight:600;color:${util > 4 ? 'var(--accent-rose)' : 'var(--text-primary)'}">${util}/4</span>
+            <div class="pct-bar-inline" style="background:transparent; height:auto; overflow:visible;">
+              ${renderBlockIndicator(
+                  // Extract allocated block arrays from active projects for this member
+                  projects
+                      .filter(p => p.status === 'Active' && (currentDivisionSettings?.capacity_active_phases || ['Doc Creation', 'Design Review', 'Development']).includes(p.phase))
+                      .map(p => (p.project_assignments || []).find(a => a.member_id === m.id)?.allocated_blocks || [])
+                      .flat()
+              )}
+            </div>
           </td>
           <td><div class="skill-tags">${topSkills || '<span style="color:var(--text-muted);font-size:11px">—</span>'}</div></td>
           <td>${actions}</td>

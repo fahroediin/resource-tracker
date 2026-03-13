@@ -1,5 +1,5 @@
 import { fetchMembers, fetchProjects } from '../lib/store.js';
-import { getInitials, getAvatarColor, getMemberUtilization, getUtilClass, getCapacityStatus, getBarColor, currentDivisionSettings } from '../lib/ui.js';
+import { getInitials, getAvatarColor, getMemberUtilization, getUtilClass, getCapacityStatus, getBarColor, renderBlockIndicator, currentDivisionSettings } from '../lib/ui.js';
 
 export async function renderCapacity() {
     try {
@@ -32,16 +32,18 @@ export async function renderCapacity() {
         grid.innerHTML = filteredMembers.map((m) => {
             // Find actual index in original array for consistent avatar colors
             const originalIndex = members.findIndex(orig => orig.id === m.id);
-            const util = getMemberUtilization(m.id, projects);
-            const status = getCapacityStatus(util);
-            const barColor = getBarColor(util);
+            const blocks = getMemberUtilization(m.id, projects);
+            const status = getCapacityStatus(blocks);
+            const barColor = getBarColor(blocks);
 
             const activePhases = currentDivisionSettings?.capacity_active_phases || ['Doc Creation', 'Design Review', 'Development'];
             const assignedProjects = projects
                 .filter(p => p.status === 'Active' && activePhases.includes(p.phase) && (p.project_assignments || []).some(a => a.member_id === m.id))
                 .map(p => {
                     const a = p.project_assignments.find(a => a.member_id === m.id);
-                    return `<div class="capacity-project-tag">${p.name} <span class="alloc">${a.allocation}%</span></div>`;
+                    const blocksArr = a.allocated_blocks || [];
+                    const slotsStr = blocksArr.map(b => `B${b}`).join(', ');
+                    return `<div class="capacity-project-tag">${p.name} <span class="alloc">${slotsStr || '0 blok'}</span></div>`;
                 }).join('');
 
             return `
@@ -56,11 +58,17 @@ export async function renderCapacity() {
             </div>
             <div>
               <span class="capacity-status ${status.cls}">${status.label}</span>
-              <span style="margin-left:8px;font-size:20px;font-weight:800;color:var(--text-primary);">${util}%</span>
+              <span style="margin-left:8px;font-size:20px;font-weight:800;color:var(--text-primary);">${blocks}/4</span>
             </div>
           </div>
-          <div class="capacity-bar-container">
-            <div class="capacity-bar-fill" style="width:${Math.min(util, 100)}%;background:${barColor}"></div>
+          <div class="capacity-bar-container" style="background:transparent; height:auto; border-radius:0;">
+            ${renderBlockIndicator(
+                // Merge all allocated blocks for this member across active projects
+                projects
+                    .filter(p => p.status === 'Active' && (currentDivisionSettings?.capacity_active_phases || ['Doc Creation', 'Design Review', 'Development']).includes(p.phase))
+                    .map(p => (p.project_assignments || []).find(a => a.member_id === m.id)?.allocated_blocks || [])
+                    .flat()
+            )}
           </div>
           <div class="capacity-projects">${assignedProjects || '<span style="color:var(--text-muted);font-size:12px">No project assignments</span>'}</div>
         </div>

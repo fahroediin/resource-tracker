@@ -68,7 +68,7 @@ export async function fetchProjects() {
       project_assignments (
         id,
         member_id,
-        allocation
+        allocated_blocks
       )
     `)
         .order('created_at', { ascending: true });
@@ -91,7 +91,7 @@ export async function createProject(project, assignments) {
         const rows = assignments.map(a => ({
             project_id: data.id,
             member_id: a.memberId,
-            allocation: a.allocation,
+            allocated_blocks: a.allocated_blocks || []
         }));
         const { error: assignError } = await supabase
             .from('project_assignments')
@@ -122,7 +122,7 @@ export async function updateProject(id, updates, assignments) {
         const rows = assignments.map(a => ({
             project_id: id,
             member_id: a.memberId,
-            allocation: a.allocation,
+            allocated_blocks: a.allocated_blocks || []
         }));
         const { error: insertError } = await supabase
             .from('project_assignments')
@@ -197,7 +197,7 @@ export async function fetchTasksByMember(memberId) {
     // Get all assignments for this member
     const { data: assignments, error: aErr } = await supabase
         .from('project_assignments')
-        .select('id, project_id, allocation, projects(id, name, status)')
+        .select('id, project_id, allocated_blocks, projects(id, name, status)')
         .eq('member_id', memberId);
     if (aErr) throw aErr;
     if (!assignments || assignments.length === 0) return [];
@@ -216,7 +216,7 @@ export async function fetchTasksByMember(memberId) {
         assignmentId: a.id,
         projectName: a.projects?.name || 'Unknown',
         projectStatus: a.projects?.status || '—',
-        allocation: a.allocation,
+        allocated_blocks: a.allocated_blocks,
         tasks: (tasks || []).filter(t => t.assignment_id === a.id),
     })).filter(g => g.tasks.length > 0);
 }
@@ -293,7 +293,7 @@ export async function logActivity(userId, action, entityType, entityId) {
         });
 }
 
-// ===== SETTINGS & DIVISIONS =====
+// ===== DIVISIONS =====
 
 export async function fetchDivisionSettings(divisionId) {
     if (!divisionId) return null;
@@ -386,19 +386,19 @@ export async function seedIfEmpty() {
     const p = insertedProjects;
     const assignments = [
         // Core Banking Revamp — Fahrudin + Rina + Budi
-        { project_id: p[0].id, member_id: m[0].id, allocation: 40 },
-        { project_id: p[0].id, member_id: m[1].id, allocation: 60 },
-        { project_id: p[0].id, member_id: m[2].id, allocation: 50 },
+        { project_id: p[0].id, member_id: m[0].id, allocated_blocks: [2] },
+        { project_id: p[0].id, member_id: m[1].id, allocated_blocks: [2] },
+        { project_id: p[0].id, member_id: m[2].id, allocated_blocks: [2] },
         // Mobile App Enhancement — Fahrudin + Dewi
-        { project_id: p[1].id, member_id: m[0].id, allocation: 30 },
-        { project_id: p[1].id, member_id: m[3].id, allocation: 50 },
+        { project_id: p[1].id, member_id: m[0].id, allocated_blocks: [1] },
+        { project_id: p[1].id, member_id: m[3].id, allocated_blocks: [2] },
         // AI Chatbot POC — Budi
-        { project_id: p[2].id, member_id: m[2].id, allocation: 30 },
+        { project_id: p[2].id, member_id: m[2].id, allocated_blocks: [1] },
         // Customer Onboarding — Rina + Dewi
-        { project_id: p[3].id, member_id: m[1].id, allocation: 30 },
-        { project_id: p[3].id, member_id: m[3].id, allocation: 40 },
+        { project_id: p[3].id, member_id: m[1].id, allocated_blocks: [1] },
+        { project_id: p[3].id, member_id: m[3].id, allocated_blocks: [2] },
         // Partner API Gateway — Fahrudin
-        { project_id: p[4].id, member_id: m[0].id, allocation: 20 },
+        { project_id: p[4].id, member_id: m[0].id, allocated_blocks: [1] },
     ];
 
     await supabase.from('project_assignments').insert(assignments);
