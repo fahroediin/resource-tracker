@@ -7,22 +7,15 @@ export async function signIn(email, password) {
 }
 
 export async function signUp(email, password, fullName) {
-    // First user becomes admin automatically
-    const { count } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true });
-
-    const role = count === 0 ? 'admin' : 'member';
-
     const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-            data: { full_name: fullName, role },
+            data: { full_name: fullName, role: 'member' },
         },
     });
     if (error) throw error;
-    return { ...data, isFirstUser: role === 'admin' };
+    return data;
 }
 
 export async function signOut() {

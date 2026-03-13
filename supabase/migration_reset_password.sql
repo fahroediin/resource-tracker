@@ -1,5 +1,5 @@
 -- ============================================
--- MIGRATION: Add email to profiles + Reset Password support
+-- MIGRATION: Add email to profiles + Auto-assign division
 -- Run this in Supabase SQL Editor
 -- ============================================
 
@@ -13,16 +13,33 @@ update public.profiles p
   where p.id = u.id
     and p.email is null;
 
--- 3. Update trigger to also store email on signup
+-- 3. Backfill division_id for existing profiles by matching members email
+update public.profiles p
+  set division_id = m.division_id
+  from public.members m
+  where lower(p.email) = lower(m.email)
+    and p.division_id is null
+    and m.division_id is not null;
+
+-- 4. Update trigger to also store email AND auto-match division on signup
 create or replace function public.handle_new_user()
 returns trigger as $$
+declare
+  matched_division_id uuid;
 begin
-  insert into public.profiles (id, full_name, role, email)
+  -- Try to find the division from members table by email match
+  select m.division_id into matched_division_id
+    from public.members m
+    where lower(m.email) = lower(new.email)
+    limit 1;
+
+  insert into public.profiles (id, full_name, role, email, division_id)
   values (
     new.id,
     coalesce(new.raw_user_meta_data->>'full_name', ''),
     coalesce(new.raw_user_meta_data->>'role', 'member'),
-    new.email
+    new.email,
+    matched_division_id  -- NULL if no match found
   );
   return new;
 end;

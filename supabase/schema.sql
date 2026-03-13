@@ -415,13 +415,22 @@ create policy "Users can insert logs for their division"
 -- ============================================
 create or replace function public.handle_new_user()
 returns trigger as $$
+declare
+  matched_division_id uuid;
 begin
-  insert into public.profiles (id, full_name, role, email)
+  -- Try to find the division from members table by email match
+  select m.division_id into matched_division_id
+    from public.members m
+    where lower(m.email) = lower(new.email)
+    limit 1;
+
+  insert into public.profiles (id, full_name, role, email, division_id)
   values (
     new.id,
     coalesce(new.raw_user_meta_data->>'full_name', ''),
     coalesce(new.raw_user_meta_data->>'role', 'member'),
-    new.email
+    new.email,
+    matched_division_id  -- NULL if no match found
   );
   return new;
 end;
