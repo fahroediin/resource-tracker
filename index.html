@@ -5,8 +5,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description"
-    content="BA Division Resource Tracking Dashboard - Manage team capacity, project assignments, and skills matrix">
-  <title>BA Resource Tracker</title>
+    content="Crewboard — Team resource tracking dashboard for managing capacity, project assignments, and skills matrix">
+  <title>Crewboard</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@latest/font/lucide.min.css">
   <script type="module" src="/src/main.js"></script>
 </head>
@@ -83,10 +83,10 @@
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-header">
         <div class="sidebar-logo">
-          <div class="logo-icon">RT</div>
+          <div class="logo-icon">CB</div>
           <div class="logo-text">
-            <span class="logo-title">Resource Tracker</span>
-            <span class="logo-subtitle">BA Division</span>
+            <span class="logo-title">Crewboard</span>
+            <span class="logo-subtitle">Resource Tracker</span>
           </div>
         </div>
       </div>
@@ -103,8 +103,8 @@
         <div class="nav-item" data-view="capacity">
           <i class="icon-bar-chart-3"></i> Capacity Planner
         </div>
-        <div class="nav-item" data-view="skills">
-          <i class="icon-grid-3x3"></i> Skills Matrix
+        <div class="nav-item" data-view="myprojects" style="display:none">
+          <i class="icon-briefcase"></i> My Projects
         </div>
         <div class="nav-item" data-view="users" style="display:none">
           <i class="icon-shield"></i> User Management
@@ -114,9 +114,6 @@
         </div>
         <div class="nav-item" data-view="superadmin" style="display:none">
           <i class="icon-globe"></i> Tenant Management
-        </div>
-        <div class="nav-item" data-view="myprojects" style="display:none">
-          <i class="icon-briefcase"></i> My Projects
         </div>
         <div class="nav-item" data-view="reports" style="display:none">
           <i class="icon-file-bar-chart"></i> Reports
@@ -604,11 +601,16 @@
           </div>
         </div>
         <div class="form-group">
-          <label>Assign Members</label>
+          <label>Assign Members & Block Allocations</label>
           <div class="checkbox-group" id="memberCheckboxes"></div>
         </div>
         <div class="form-group" id="allocationSection" style="display:none;">
-          <label>Allocation per Member (%)</label>
+          <label>Allocation Cycle</label>
+          <select id="projectCycle" style="margin-bottom: 12px;">
+            <option value="">-- Select Cycle --</option>
+            <!-- Dynamically populated -->
+          </select>
+          <label>Allocation per Member</label>
           <div class="allocation-inputs" id="allocationInputs"></div>
         </div>
       </div>

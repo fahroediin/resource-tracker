@@ -1,5 +1,5 @@
 -- ============================================
--- BA Resource Tracker — Supabase Schema (V2 Multi-Tenant)
+-- Crewboard — Supabase Schema (V2 Multi-Tenant)
 -- Run this in Supabase SQL Editor
 -- ============================================
 
@@ -113,12 +113,12 @@ create table if not exists public.projects (
 alter table public.projects add column if not exists division_id uuid references public.divisions(id) on delete cascade;
 alter table public.projects enable row level security;
 
--- Project Assignments
+-- Project Assignments (block-based: 1 block = 2 hours, max 4 blocks/day)
 create table if not exists public.project_assignments (
   id uuid primary key default gen_random_uuid(),
   project_id uuid not null references public.projects(id) on delete cascade,
   member_id uuid not null references public.members(id) on delete cascade,
-  allocation integer not null default 50 check (allocation >= 0 and allocation <= 100),
+  allocated_blocks jsonb not null default '[]'::jsonb,
   unique(project_id, member_id)
 );
 alter table public.project_assignments enable row level security;
@@ -310,10 +310,16 @@ create policy "Head/Admin can manage assignments"
   );
 
 -- Members can update their OWN allocation (email-matched via auth.email())
-drop policy if exists "Members can update own allocation" on public.project_assignments;
-create policy "Members can update own allocation"
+drop policy if exists "Members can update their own allocations" on public.project_assignments;
+create policy "Members can update their own allocations"
   on public.project_assignments for update
   using (
+    exists (
+      select 1 from public.members m
+      where m.id = project_assignments.member_id
+        and lower(m.email) = lower(auth.email())
+    )
+  ) with check (
     exists (
       select 1 from public.members m
       where m.id = project_assignments.member_id
