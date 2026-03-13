@@ -49,6 +49,29 @@
     </div>
   </div>
 
+  <!-- ===== RESET PASSWORD SECTION ===== -->
+  <div id="resetPasswordSection" class="auth-container hidden">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <div class="logo-icon"><i class="icon-key-round" style="font-size:24px;"></i></div>
+        <h1>Reset Password</h1>
+        <p>Masukkan password baru Anda</p>
+      </div>
+      <div class="auth-error" id="resetError"></div>
+      <form class="auth-form" id="resetPasswordForm">
+        <div class="form-group">
+          <label>Password Baru</label>
+          <input type="password" id="resetNewPassword" placeholder="Minimal 6 karakter" required minlength="6">
+        </div>
+        <div class="form-group">
+          <label>Konfirmasi Password</label>
+          <input type="password" id="resetConfirmPassword" placeholder="Ulangi password baru" required minlength="6">
+        </div>
+        <button type="submit" class="btn btn-primary" id="resetSubmitBtn">Simpan Password Baru</button>
+      </form>
+    </div>
+  </div>
+
   <!-- ===== APP SECTION ===== -->
   <div id="appSection" class="app-layout hidden">
     <!-- Mobile Toggle -->

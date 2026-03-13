@@ -9,14 +9,20 @@ const itemsPerPage = 8;
 function canResetPassword(targetProfile) {
     const currentUser = getCurrentUserProfile();
     if (!currentUser || !targetProfile) return false;
-    if (currentUser.id === targetProfile.id) return false;
 
-    // Superadmin can reset admin/head in any division
+    const isSelf = currentUser.id === targetProfile.id;
+
+    // Superadmin/Admin can reset their own password
+    if (isSelf) {
+        return currentUser.role === 'superadmin' || currentUser.role === 'admin';
+    }
+
+    // Superadmin can reset admin/head/member in any division
     if (currentUser.role === 'superadmin') {
         return ['admin', 'head', 'member'].includes(targetProfile.role);
     }
 
-    // Admin can reset member/head in their division
+    // Admin can reset member in their division
     if (currentUser.role === 'admin') {
         return targetProfile.role === 'member' &&
             currentUser.division_id &&
@@ -82,8 +88,9 @@ export async function renderUsers() {
               <button title="Delete" class="delete" data-action="delete-user" data-id="${p.id}"><i class="icon-trash-2"></i></button>
             ` : '';
 
+            const selfLabel = isSelf ? '<span style="font-size:11px;color:var(--text-muted);margin-right:6px;">You</span>' : '';
             const actions = (resetBtn || editDeleteBtns)
-                ? `<div class="row-actions">${resetBtn}${editDeleteBtns}</div>`
+                ? `<div class="row-actions">${selfLabel}${resetBtn}${editDeleteBtns}</div>`
                 : (isSelf ? '<span style="font-size:11px;color:var(--text-muted)">You</span>' : '');
 
             return `

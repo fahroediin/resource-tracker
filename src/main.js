@@ -1,5 +1,6 @@
 import './styles/index.css';
 import { getCurrentUser, onAuthStateChange, signOut } from './lib/auth.js';
+import { supabase } from './lib/supabase.js';
 import { seedIfEmpty } from './lib/store.js';
 import { switchView, registerViewRenderer, setCurrentUserProfile, getInitials, showToast, toggleSidebar, closeModal, loadDivisionSettings } from './lib/ui.js';
 import { initAuthView } from './views/auth.js';
@@ -25,6 +26,10 @@ registerViewRenderer('settings', renderSettings);
 registerViewRenderer('superadmin', renderSuperadmin);
 registerViewRenderer('myprojects', renderMyProjects);
 registerViewRenderer('reports', renderReports);
+
+// Password recovery lock — persists across page refreshes via sessionStorage
+function setRecoveryMode(val) { val ? sessionStorage.setItem('recovery_mode', '1') : sessionStorage.removeItem('recovery_mode'); }
+function isRecoveryMode() { return sessionStorage.getItem('recovery_mode') === '1'; }
 
 // ===== APP INIT =====
 
@@ -76,13 +81,22 @@ async function initApp() {
     handleAuthRedirectErrors();
 
     // Auth state listener
-    onAuthStateChange(async (session) => {
-        if (session) {
+    onAuthStateChange(async (session, event) => {
+        if (event === 'PASSWORD_RECOVERY') {
+            setRecoveryMode(true);
+            showResetPassword();
+        } else if (session && !isRecoveryMode()) {
             await showApp();
-        } else {
+        } else if (session && isRecoveryMode()) {
+            showResetPassword();
+        } else if (!session) {
+            setRecoveryMode(false);
             showAuth();
         }
     });
+
+    // Reset password form handler
+    document.getElementById('resetPasswordForm')?.addEventListener('submit', handleResetPassword);
     // Theme Toggle Logic
     const themeBtn = document.getElementById('themeToggleBtn');
     if (themeBtn) {
@@ -111,6 +125,9 @@ async function initApp() {
 }
 
 async function showApp() {
+    // Block access during password recovery
+    if (isRecoveryMode()) return showResetPassword();
+
     const user = await getCurrentUser();
     if (!user) return showAuth();
 
@@ -199,6 +216,67 @@ function showAuth() {
 
     document.getElementById('authSection').classList.remove('hidden');
     document.getElementById('appSection').classList.add('hidden');
+    document.getElementById('resetPasswordSection').classList.add('hidden');
+}
+
+function showResetPassword() {
+    // Hide initial loader
+    const loader = document.getElementById('globalLoader');
+    if (loader) loader.style.display = 'none';
+
+    document.getElementById('authSection').classList.add('hidden');
+    document.getElementById('appSection').classList.add('hidden');
+    document.getElementById('resetPasswordSection').classList.remove('hidden');
+
+    // Clear any previous inputs/errors
+    document.getElementById('resetNewPassword').value = '';
+    document.getElementById('resetConfirmPassword').value = '';
+    document.getElementById('resetError').textContent = '';
+    document.getElementById('resetError').style.display = 'none';
+}
+
+async function handleResetPassword(e) {
+    e.preventDefault();
+
+    const newPassword = document.getElementById('resetNewPassword').value;
+    const confirmPassword = document.getElementById('resetConfirmPassword').value;
+    const errorEl = document.getElementById('resetError');
+    const submitBtn = document.getElementById('resetSubmitBtn');
+
+    // Reset error
+    errorEl.style.display = 'none';
+
+    // Validation
+    if (newPassword.length < 6) {
+        errorEl.textContent = 'Password minimal 6 karakter';
+        errorEl.style.display = 'block';
+        return;
+    }
+
+    if (newPassword !== confirmPassword) {
+        errorEl.textContent = 'Password tidak cocok';
+        errorEl.style.display = 'block';
+        return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Menyimpan...';
+
+    try {
+        const { error } = await supabase.auth.updateUser({ password: newPassword });
+        if (error) throw error;
+
+        showToast('Password berhasil diubah! Silakan login kembali.');
+
+        // Sign out so user can login with new password
+        await signOut();
+    } catch (err) {
+        errorEl.textContent = err.message || 'Gagal mengubah password';
+        errorEl.style.display = 'block';
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Simpan Password Baru';
+    }
 }
 
 function handleAuthRedirectErrors() {
