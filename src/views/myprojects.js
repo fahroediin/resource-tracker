@@ -5,6 +5,7 @@ import { fetchTasksByAssignment, createTask, toggleTask, deleteTask } from '../l
 let currentPage = 1;
 const itemsPerPage = 8;
 
+// Fetch the member record linked to the logged-in user by email
 async function getMyMemberRecord() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.email) return null;
@@ -192,8 +193,8 @@ export async function renderMyProjects() {
             <div class="glass-card" style="margin-bottom:20px;padding:16px 20px;display:flex;align-items:center;gap:12px;">
                 <i class="icon-info" style="color:var(--text-muted);font-size:18px;flex-shrink:0;"></i>
                 <p style="font-size:13px;color:var(--text-secondary);margin:0;">
-                    Setiap project dialokasikan dalam <strong>blok</strong> (1 blok = 2 jam kerja). Maksimal 4 blok per hari.
-                    Gunakan <strong>task to-do</strong> untuk tracking pekerjaan. Setelah semua task selesai, set alokasi ke <strong>0 blok</strong>.
+                    Update the <strong>allocation %</strong> to reflect how much of your working time is spent on each project. 
+                    Use the <strong>task to-do</strong> to track what needs to be done. When all tasks are completed, set allocation to <strong>0%</strong>.
                 </p>
             </div>
             <div class="my-projects-grid" id="myProjectsList">
@@ -214,27 +215,22 @@ export async function renderMyProjects() {
                             <span class="badge" style="background:var(--bg-secondary);border:1px solid var(--glass-border);font-size:11px;">${p.status || '—'}</span>
                         </div>
                         <div>
-                            <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:8px;">Alokasi Blok Waktu</label>
-                            <div class="block-selector-specific" data-assignment-id="${a.id}">
-                                ${[
-                                    {val: 1, label: '08:30-10:30'},
-                                    {val: 2, label: '10:30-12:30'},
-                                    {val: 3, label: '12:30-14:30'},
-                                    {val: 4, label: '14:30-16:30'}
-                                ].map(b => {
-                                    const isChecked = (a.allocated_blocks || []).includes(b.val);
-                                    return `
-                                    <label style="display:inline-flex;align-items:center;gap:6px;margin-right:12px;font-size:13px;opacity:${isChecked ? '1' : '0.6'};cursor:pointer;">
-                                        <input type="checkbox" value="${b.val}" class="block-cb" ${isChecked ? 'checked' : ''}>
-                                        Block ${b.val} <span style="font-size:11px;color:var(--text-muted)">(${b.label})</span>
-                                    </label>
-                                    `;
-                                }).join('')}
+                            <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:8px;">My Allocation</label>
+                            <div style="display:flex;align-items:center;gap:12px;">
+                                <input 
+                                    type="range" 
+                                    min="0" max="100" step="5"
+                                    value="${a.allocation}"
+                                    class="allocation-slider"
+                                    data-assignment-id="${a.id}"
+                                    style="flex:1;"
+                                >
+                                <span class="allocation-display" style="font-size:20px;font-weight:800;min-width:52px;text-align:right;color:var(--text-primary);">${a.allocation}%</span>
                             </div>
                         </div>
                         <div style="margin-top:16px;display:flex;justify-content:flex-end;">
                             <button class="btn btn-primary btn-sm save-allocation-btn" data-assignment-id="${a.id}" style="font-size:12px;">
-                                <i class="icon-save"></i> Save Blocks
+                                <i class="icon-save"></i> Save
                             </button>
                         </div>
 
@@ -252,7 +248,7 @@ export async function renderMyProjects() {
                             <div class="task-section-body"></div>
                             <div class="task-completion-hint" style="display:none;">
                                 <i class="icon-info"></i>
-                                <span>Semua task sudah selesai! Anda bisa mengubah alokasi menjadi <strong>0 blok</strong>.</span>
+                                <span>Semua task sudah selesai! Anda bisa mengubah alokasi menjadi <strong>0%</strong>.</span>
                             </div>
                         </div>
                     </div>`;
@@ -292,12 +288,11 @@ export async function renderMyProjects() {
             renderMyProjects();
         });
 
-        // Wire up specific block checkboxes to change opacity
-        container.querySelectorAll('.block-selector-specific').forEach(selector => {
-            selector.querySelectorAll('.block-cb').forEach(cb => {
-                cb.addEventListener('change', (e) => {
-                    e.target.parentElement.style.opacity = e.target.checked ? '1' : '0.6';
-                });
+        // Wire up sliders → display
+        container.querySelectorAll('.allocation-slider').forEach(slider => {
+            const display = slider.parentElement.querySelector('.allocation-display');
+            slider.addEventListener('input', () => {
+                display.textContent = slider.value + '%';
             });
         });
 
@@ -305,66 +300,25 @@ export async function renderMyProjects() {
         container.querySelectorAll('.save-allocation-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const assignmentId = btn.dataset.assignmentId;
-                const selector = container.querySelector(`.block-selector-specific[data-assignment-id="${assignmentId}"]`);
-                
-                const checkedBoxes = Array.from(selector.querySelectorAll('.block-cb:checked'));
-                const newAllocatedBlocks = checkedBoxes.map(cb => parseInt(cb.value, 10));
+                const slider = container.querySelector(`.allocation-slider[data-assignment-id="${assignmentId}"]`);
+                const newAlloc = parseInt(slider.value, 10);
 
-                if (newAllocatedBlocks.length === 0 && !confirm('Are you sure you want to set your allocation to 0 blocks for this project?')) {
-                    return;
-                }
-
-                // Check Database directly for overlaps!
                 btn.disabled = true;
-                btn.innerHTML = '<i class="icon-loader-circle"></i> Val...';
-                
+                btn.innerHTML = '<i class="icon-loader-circle"></i> Saving...';
+
                 try {
-                    let hasOverlapErr = false;
-                    let conflictMsg = '';
-                    
-                    // Fetch all assignments for this member to do an airtight overlap check
-                    const member = await getMyMemberRecord();
-                    const { data: existingAssignments, error: eCycle } = await supabase
-                        .from('project_assignments')
-                        .select('id, project_id, allocated_blocks, projects(name)')
-                        .eq('member_id', member.id);
-                        
-                    if (!eCycle && existingAssignments) {
-                        const otherAssignments = existingAssignments.filter(a => String(a.id) !== String(assignmentId));
-                        
-                        newAllocatedBlocks.forEach(block => {
-                            otherAssignments.forEach(otherA => {
-                                const otherBlocks = Array.isArray(otherA.allocated_blocks) ? otherA.allocated_blocks : [];
-                                if (otherBlocks.includes(block)) {
-                                    hasOverlapErr = true;
-                                    const projName = otherA.projects?.name || 'Unknown Project';
-                                    conflictMsg = `Overlap Error: Block ${block} is already selected in project "${projName}". Please uncheck it there first.`;
-                                }
-                            });
-                        });
-                    }
-
-                    if (hasOverlapErr) {
-                        showToast(conflictMsg, 'error');
-                        btn.disabled = false;
-                        btn.innerHTML = '<i class="icon-save"></i> Save Blocks';
-                        return;
-                    }
-
-                    btn.innerHTML = '<i class="icon-loader-circle"></i> Saving...';
-
                     const { error } = await supabase
                         .from('project_assignments')
-                        .update({ allocated_blocks: newAllocatedBlocks })
+                        .update({ allocation: newAlloc })
                         .eq('id', assignmentId);
 
                     if (error) throw error;
-                    showToast('Blocks saved!');
+                    showToast('Allocation saved!');
                 } catch (err) {
                     showToast(err.message || 'Failed to save', 'error');
                 } finally {
                     btn.disabled = false;
-                    btn.innerHTML = '<i class="icon-save"></i> Save Blocks';
+                    btn.innerHTML = '<i class="icon-save"></i> Save';
                 }
             });
         });

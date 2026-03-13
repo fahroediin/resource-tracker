@@ -1,4 +1,4 @@
-import { fetchProjects, createProject, updateProject, deleteProject as deleteProjectStore, fetchMembers } from '../lib/store.js';
+import { fetchMembers, fetchProjects, createProject, updateProject, deleteProject as deleteProjectStore } from '../lib/store.js';
 import { showToast, showConfirm, openModal, closeModal, canEdit, currentDivisionSettings } from '../lib/ui.js';
 
 let currentTypeFilter = 'all';
@@ -72,10 +72,8 @@ export async function renderProjects() {
             const statusBadgeCls = statusObj ? `badge-${statusObj.name.toLowerCase().replace(/\s+/g, '')}` : 'badge-planning';
 
             const assignedMembers = (p.project_assignments || []).map(a => {
-                const member = members.find(m => m.id === a.member_id);
-                const blocksArr = a.allocated_blocks || [];
-                const str = blocksArr.length > 0 ? blocksArr.map(b => `B${b}`).join(',') : '0';
-                return member ? `${member.name} (${str} blok)` : `Unknown (${str} blok)`;
+                const m = members.find(mm => mm.id === a.member_id);
+                return m ? `${m.name} (${a.allocation}%)` : null;
             }).filter(Boolean);
 
             // Check if Internal & Active & > 14 days AND Phase is 'Doc Creation'
@@ -256,6 +254,7 @@ async function openProjectModal(project = null) {
     document.getElementById('projectEnd').value = project ? (project.end_date || '') : '';
 
     const members = await fetchMembers();
+    const currentAssignments = project ? (project.project_assignments || []) : [];
 
     const checkboxGroup = document.getElementById('memberCheckboxes');
     if (members.length === 0) {
@@ -295,34 +294,13 @@ function updateAllocationInputs(existingAssignments, members) {
         const member = members.find(m => m.id === cb.value);
         if (!member) return '';
         const prev = (existingAssignments || []).find(a => a.member_id === cb.value);
-        const blocksArr = prev ? (prev.allocated_blocks || []) : [];
         return `
-      <div class="allocation-row" style="flex-direction:column; align-items:flex-start;">
-        <span class="member-label" style="font-weight:600; margin-bottom:8px;">${member.name}</span>
-        <div class="block-checkboxes" data-member-id="${cb.value}" style="display:flex; gap:12px;">
-          <label style="font-size:12px; display:flex; align-items:center; gap:4px; opacity: ${blocksArr.includes(1) ? '1' : '0.7'}">
-            <input type="checkbox" value="1" ${blocksArr.includes(1) ? 'checked' : ''}> Block 1 (08:30-10:30)
-          </label>
-          <label style="font-size:12px; display:flex; align-items:center; gap:4px; opacity: ${blocksArr.includes(2) ? '1' : '0.7'}">
-            <input type="checkbox" value="2" ${blocksArr.includes(2) ? 'checked' : ''}> Block 2 (10:30-12:30)
-          </label>
-          <label style="font-size:12px; display:flex; align-items:center; gap:4px; opacity: ${blocksArr.includes(3) ? '1' : '0.7'}">
-            <input type="checkbox" value="3" ${blocksArr.includes(3) ? 'checked' : ''}> Block 3 (12:30-14:30)
-          </label>
-          <label style="font-size:12px; display:flex; align-items:center; gap:4px; opacity: ${blocksArr.includes(4) ? '1' : '0.7'}">
-            <input type="checkbox" value="4" ${blocksArr.includes(4) ? 'checked' : ''}> Block 4 (14:30-16:30)
-          </label>
-        </div>
+      <div class="allocation-row">
+        <span class="member-label">${member.name}</span>
+        <input type="number" min="0" max="100" value="${prev ? prev.allocation : 50}" data-member-id="${cb.value}"> %
       </div>
     `;
     }).join('');
-
-    // Add listener to change opacity on check
-    container.querySelectorAll('.block-checkboxes input[type="checkbox"]').forEach(cb => {
-        cb.addEventListener('change', (e) => {
-           e.target.parentElement.style.opacity = e.target.checked ? '1' : '0.7'; 
-        });
-    });
 }
 
 async function saveProject() {
@@ -347,54 +325,11 @@ async function saveProject() {
         if (!confirmed) return;
     }
 
-    const blockGroups = document.querySelectorAll('#allocationInputs .block-checkboxes');
-    
-    let hasOverlapErr = false;
-    let conflictMsg = '';
-
-    const allProjects = await fetchProjects();
-    const allAssignments = [];
-    allProjects.forEach(p => {
-        (p.project_assignments || []).forEach(a => {
-            allAssignments.push({
-                projectId: p.id,
-                projectName: p.name,
-                memberId: a.member_id,
-                blocks: a.allocated_blocks || []
-            });
-        });
-    });
-
-    const assignments = Array.from(blockGroups).map(group => {
-        const memberId = group.dataset.memberId;
-        const checkedBoxes = Array.from(group.querySelectorAll('input[type="checkbox"]:checked'));
-        const allocatedBlocks = checkedBoxes.map(cb => parseInt(cb.value, 10));
-
-        // Overlap Validation
-        const memberOtherAssignments = allAssignments.filter(a => 
-            a.memberId === memberId && 
-            String(a.projectId) !== String(id)
-        );
-        
-        allocatedBlocks.forEach(block => {
-            memberOtherAssignments.forEach(otherA => {
-                if (otherA.blocks.includes(block)) {
-                    hasOverlapErr = true;
-                    conflictMsg = `Overlap Error: Block ${block} is already assigned to this member in project "${otherA.projectName}".`;
-                }
-            });
-        });
-
-        return {
-            memberId,
-            allocated_blocks: allocatedBlocks
-        };
-    });
-
-    if (hasOverlapErr) {
-        showToast(conflictMsg, 'error');
-        return;
-    }
+    const allocInputs = document.querySelectorAll('#allocationInputs input[type="number"]');
+    const assignments = Array.from(allocInputs).map(input => ({
+        memberId: input.dataset.memberId,
+        allocation: Math.max(0, Math.min(100, parseInt(input.value, 10) || 0)),
+    }));
 
     const data = {
         name,

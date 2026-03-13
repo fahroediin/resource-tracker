@@ -1,5 +1,5 @@
 import { fetchMembers, fetchProjects } from '../lib/store.js';
-import { getInitials, getAvatarColor, getMemberUtilization, getUtilClass, renderBlockIndicator, currentDivisionSettings } from '../lib/ui.js';
+import { getInitials, getAvatarColor, getMemberUtilization, getUtilClass } from '../lib/ui.js';
 
 let currentDashFilter = 'all';
 let currentUtilFilter = 'highest';
@@ -12,8 +12,8 @@ export async function renderDashboard() {
         const activeProjects = projects.filter(p => p.status === 'Active');
         const onLeave = members.filter(m => m.status === 'On Leave').length;
 
-        const avgBlocks = members.length
-            ? +(members.reduce((acc, m) => acc + getMemberUtilization(m.id, projects), 0) / members.length).toFixed(1)
+        const avgUtil = members.length
+            ? Math.round(members.reduce((acc, m) => acc + getMemberUtilization(m.id, projects), 0) / members.length)
             : 0;
 
         // Project type breakdown
@@ -41,9 +41,9 @@ export async function renderDashboard() {
       <div class="stat-card mono-3">
         <div class="stat-icon mono-3"><i class="icon-activity"></i></div>
         <div class="stat-content">
-          <span class="stat-label">Avg Blocks Used</span>
-          <span class="stat-value">${avgBlocks}/4</span>
-          <span class="stat-change">${avgBlocks <= 3 ? 'Healthy' : 'Attention needed'}</span>
+          <span class="stat-label">Avg Utilization</span>
+          <span class="stat-value">${avgUtil}%</span>
+          <span class="stat-change">${avgUtil <= 80 ? 'Healthy' : 'Attention needed'}</span>
         </div>
       </div>
       <div class="stat-card mono-4">
@@ -64,27 +64,19 @@ export async function renderDashboard() {
             const topUtilMembers = members
                 .map(m => ({
                     ...m,
-                    blocks: getMemberUtilization(m.id, projects)
+                    util: getMemberUtilization(m.id, projects)
                 }))
-                .sort((a, b) => currentUtilFilter === 'highest' ? b.blocks - a.blocks : a.blocks - b.blocks)
+                .sort((a, b) => currentUtilFilter === 'highest' ? b.util - a.util : a.util - b.util)
                 .slice(0, 5);
 
             utilList.innerHTML = topUtilMembers.map((m, i) => {
-                const cls = getUtilClass(m.blocks);
+                const cls = getUtilClass(m.util);
                 return `
           <div class="utilization-item">
             <div class="util-avatar" style="background:${getAvatarColor(i)}">${getInitials(m.name)}</div>
             <div class="util-info">
-              <div class="util-name"><span>${m.name}</span><span class="util-pct">${m.blocks}/4</span></div>
-              <div class="util-bar">
-                ${renderBlockIndicator(
-                    // Extract allocated block arrays from active projects
-                    projects
-                        .filter(p => p.status === 'Active' && (currentDivisionSettings?.capacity_active_phases || ['Doc Creation', 'Design Review', 'Development']).includes(p.phase))
-                        .map(p => (p.project_assignments || []).find(a => a.member_id === m.id)?.allocated_blocks || [])
-                        .flat()
-                )}
-              </div>
+              <div class="util-name"><span>${m.name}</span><span class="util-pct">${m.util}%</span></div>
+              <div class="util-bar"><div class="util-fill ${cls}" style="width:${Math.min(m.util, 100)}%"></div></div>
             </div>
           </div>
         `;

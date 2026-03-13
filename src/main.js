@@ -178,13 +178,6 @@ async function showApp() {
         reportsNav.style.display = canSeeReports ? '' : 'none';
     }
 
-    // Show/hide Cycles nav — only for head/admin
-    const cyclesNav = document.querySelector('.nav-item[data-view="cycles"]');
-    if (cyclesNav) {
-        const canSeeCycles = user.profile?.role === 'admin' || user.profile?.role === 'head';
-        cyclesNav.style.display = canSeeCycles ? '' : 'none';
-    }
-
     const appSection = document.getElementById('appSection');
     const isFirstLoad = appSection.classList.contains('hidden');
 

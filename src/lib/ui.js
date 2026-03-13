@@ -19,25 +19,24 @@ export function getAvatarColor(index) {
     return AVATAR_COLORS[index % AVATAR_COLORS.length];
 }
 
-export function getUtilClass(blocks) {
-    if (blocks <= 1) return 'low';
-    if (blocks <= 3) return 'optimal';
-    if (blocks === 4) return 'high';
+export function getUtilClass(pct) {
+    if (pct <= 50) return 'low';
+    if (pct <= 80) return 'optimal';
+    if (pct <= 100) return 'high';
     return 'over';
 }
 
-export function getCapacityStatus(blocks) {
-    if (blocks === 0) return { label: 'Unallocated', cls: 'status-under' };
-    if (blocks <= 2) return { label: 'Available', cls: 'status-under' };
-    if (blocks <= 3) return { label: 'Optimal', cls: 'status-optimal' };
-    if (blocks === 4) return { label: 'Full', cls: 'status-high' };
+export function getCapacityStatus(pct) {
+    if (pct < 50) return { label: 'Under-allocated', cls: 'status-under' };
+    if (pct <= 80) return { label: 'Optimal', cls: 'status-optimal' };
+    if (pct <= 100) return { label: 'High Load', cls: 'status-high' };
     return { label: 'Over-allocated', cls: 'status-over' };
 }
 
-export function getBarColor(blocksCount) {
-    if (blocksCount <= 1) return 'linear-gradient(90deg, #606060, #808080)';
-    if (blocksCount <= 2) return 'linear-gradient(90deg, #A0A0A0, #C0C0C0)';
-    if (blocksCount <= 3) return 'linear-gradient(90deg, #D0D0D0, #E8E8E8)';
+export function getBarColor(pct) {
+    if (pct <= 50) return 'linear-gradient(90deg, #606060, #808080)';
+    if (pct <= 80) return 'linear-gradient(90deg, #A0A0A0, #C0C0C0)';
+    if (pct <= 100) return 'linear-gradient(90deg, #D0D0D0, #E8E8E8)';
     return 'linear-gradient(90deg, #FFFFFF, #E0E0E0)';
 }
 
@@ -47,33 +46,9 @@ export function getMemberUtilization(memberId, projects) {
     for (const p of projects) {
         if (p.status !== 'Active' || !activePhases.includes(p.phase)) continue;
         const assignment = (p.project_assignments || []).find(a => a.member_id === memberId);
-        if (assignment) {
-            // Check for new allocated_blocks array, fallback to old allocation integer
-            if (Array.isArray(assignment.allocated_blocks)) {
-                total += assignment.allocated_blocks.length;
-            } else if (typeof assignment.allocation === 'number') {
-                total += assignment.allocation;
-            }
-        }
+        if (assignment) total += assignment.allocation;
     }
-    return total; // Returns total blocks (0-N), max ideal is 4
-}
-
-// Generate block indicator HTML (4 specific time slots)
-export function renderBlockIndicator(allocatedBlocksArray = []) {
-    let html = '<div class="block-indicator">';
-    for (let i = 1; i <= 4; i++) {
-        const isFilled = allocatedBlocksArray.includes(i);
-        let timeLabel = '';
-        if (i === 1) timeLabel = '08:30 - 10:30';
-        else if (i === 2) timeLabel = '10:30 - 12:30';
-        else if (i === 3) timeLabel = '12:30 - 14:30';
-        else if (i === 4) timeLabel = '14:30 - 16:30';
-        
-        html += `<div class="block-cell ${isFilled ? 'filled' : 'empty'}" title="Block ${i}: ${timeLabel}"></div>`;
-    }
-    html += '</div>';
-    return html;
+    return total;
 }
 
 // ===== SWEET ALERT =====

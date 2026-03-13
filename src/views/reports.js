@@ -40,10 +40,10 @@ async function generateTeamSummary() {
     const members = await fetchMembers();
     const projects = await fetchProjects();
 
-    const headers = ['Name', 'Role', 'Status', 'Email', 'Blocks Used'];
+    const headers = ['Name', 'Role', 'Status', 'Email', 'Utilization (%)'];
     const rows = members.map(m => {
-        const blocks = getMemberUtilization(m.id, projects);
-        return [m.name, m.role, m.status, m.email || '', `${blocks}/4`];
+        const util = getMemberUtilization(m.id, projects);
+        return [m.name, m.role, m.status, m.email || '', util];
     });
 
     return { headers, rows, filename: `team_summary_${getDateString()}.csv` };
@@ -54,7 +54,7 @@ async function generateProjectAssignments() {
     const members = await fetchMembers();
     const memberMap = Object.fromEntries(members.map(m => [m.id, m.name]));
 
-    const headers = ['Project', 'Client', 'Type', 'Phase', 'Status', 'Start Date', 'End Date', 'Member', 'Blocks'];
+    const headers = ['Project', 'Client', 'Type', 'Phase', 'Status', 'Start Date', 'End Date', 'Member', 'Allocation (%)'];
     const rows = [];
 
     for (const p of projects) {
@@ -63,9 +63,7 @@ async function generateProjectAssignments() {
             rows.push([p.name, p.client_name || '', p.type, p.phase, p.status, p.start_date || '', p.end_date || '', '(none)', '']);
         } else {
             for (const a of assignments) {
-                const blocksArr = a.allocated_blocks || [];
-                const blockStr = blocksArr.length > 0 ? blocksArr.map(b => `B${b}`).join(' & ') : '0';
-                rows.push([p.name, p.client_name || '', p.type, p.phase, p.status, p.start_date || '', p.end_date || '', memberMap[a.member_id] || 'Unknown', blockStr]);
+                rows.push([p.name, p.client_name || '', p.type, p.phase, p.status, p.start_date || '', p.end_date || '', memberMap[a.member_id] || 'Unknown', a.allocation]);
             }
         }
     }
@@ -78,21 +76,19 @@ async function generateCapacityOverview() {
     const projects = await fetchProjects();
     const activePhases = currentDivisionSettings?.capacity_active_phases || ['Doc Creation', 'Design Review', 'Development'];
 
-    const headers = ['Member', 'Role', 'Total Blocks', 'Project Breakdown'];
+    const headers = ['Member', 'Role', 'Total Utilization (%)', 'Project Breakdown'];
     const rows = members.map(m => {
-        const blocks = getMemberUtilization(m.id, projects);
+        const util = getMemberUtilization(m.id, projects);
         // Build breakdown
         const breakdown = [];
         for (const p of projects) {
             if (p.status !== 'Active' || !activePhases.includes(p.phase)) continue;
             const assignment = (p.project_assignments || []).find(a => a.member_id === m.id);
             if (assignment) {
-                const blocksArr = assignment.allocated_blocks || [];
-                const blockStr = blocksArr.length > 0 ? blocksArr.map(b => `B${b}`).join(',') : '0';
-                breakdown.push(`${p.name} (${blockStr} blok)`);
+                breakdown.push(`${p.name} (${assignment.allocation}%)`);
             }
         }
-        return [m.name, m.role, `${blocks}/4`, breakdown.join('; ') || '—'];
+        return [m.name, m.role, util, breakdown.join('; ') || '—'];
     });
 
     return { headers, rows, filename: `capacity_overview_${getDateString()}.csv` };

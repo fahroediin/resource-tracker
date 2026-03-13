@@ -1,22 +1,21 @@
-# Crewboard
+# BA Resource Tracker
 
-Resource tracking and allocation dashboard for the Business Analyst division. Built with **Vite**, **Supabase**, and vanilla JavaScript.
+Resource tracking dashboard for the Business Analyst division. Built with **Vite**, **Supabase**, and vanilla JavaScript.
 
 ## Features
 
 ### Core
 
-- **Dashboard** — Team utilization overview (X/4 blocks), stat cards, active project list
+- **Dashboard** — Team utilization overview, stat cards, active project list with type filters
 - **Team Members** — CRUD management with role, status, email, and skill tracking
-- **Project Assignments** — Track projects with type/phase/status filters, member allocation by blocks (1 block = 2 hours)
-- **Allocation Cycles** — Manage time-boxed sprints/cycles. All new project assignments are attached to an active cycle.
-- **Capacity Planner** — Visualize workload distribution per member with 4-block UI visualization
+- **Project Assignments** — Track projects with type/phase/status filters, member allocation percentages, pagination
+- **Capacity Planner** — Visualize workload distribution per member with project breakdown
 - **Skills Matrix** — Interactive star-rating proficiency matrix (configurable skill list per division)
 
 ### Member Self-Service
 
-- **My Projects** — Members update their own unallocated blocks per assigned project using a visual block selector
-- **Task To-Do** — Per-project checklist for tracking work items, with progress bar and completion indicator. When all tasks are done, a hint prompts the member to clear allocations.
+- **My Projects** — Members update their own allocation % per assigned project
+- **Task To-Do** — Per-project checklist for tracking work items, with progress bar and completion indicator. When all tasks are done, a hint prompts the member to set allocation to 0%
 
 ### Management (Head/Admin)
 
@@ -72,8 +71,7 @@ New signups default to `member` (read-only). An admin or head must promote the u
 1. Create a project at [supabase.com](https://supabase.com)
 2. Go to **SQL Editor** → paste and run `supabase/schema.sql`
 3. Run `supabase/migration_project_tasks.sql` for the Task To-Do feature
-4. Run `supabase/migration_block_system.sql` to apply the Crewboard allocation changes
-5. Go to **Authentication** → **Providers** → **Email** → disable "Confirm email" (optional)
+4. Go to **Authentication** → **Providers** → **Email** → disable "Confirm email" (optional)
 
 ### 2. Environment
 
@@ -105,15 +103,14 @@ bun run dev      # or: npm run dev
 
 ```
 ba-resource-tracker/
-├── index.html                   # Main single-page application structure
-├── package.json                 # 'crewboard' dependencies
+├── index.html
+├── package.json
 ├── vite.config.js
 ├── .env
 ├── ROADMAP.md                   # Future features roadmap
 ├── supabase/
-│   ├── schema.sql               # Core tables + RLS + triggers
-│   ├── migration_project_tasks.sql  # Task To-Do migration
-│   └── migration_block_system.sql   # Cycle & block allocation migration
+│   ├── schema.sql               # 8 tables + RLS + triggers
+│   └── migration_project_tasks.sql  # Task To-Do migration
 └── src/
     ├── main.js                  # Entry point, auth state, init
     ├── lib/
@@ -125,15 +122,14 @@ ba-resource-tracker/
     │   ├── auth.js              # Login / Register
     │   ├── dashboard.js         # Stats + utilization
     │   ├── members.js           # Team CRUD + View Member Tasks modal
-    │   ├── projects.js          # Project + assignments (Cycle dropdown)
-    │   ├── capacity.js          # Visual 4-block workload cards
+    │   ├── projects.js          # Project + assignments
+    │   ├── capacity.js          # Workload cards
     │   ├── skills.js            # Star matrix
     │   ├── users.js             # User management
     │   ├── settings.js          # Division settings
     │   ├── superadmin.js        # Tenant management
-    │   ├── myprojects.js        # Member self-allocation (Block selector) + Task To-Do
-    │   ├── cycles.js            # Cycle Management UI
-    │   └── reports.js           # CSV export (block data)
+    │   ├── myprojects.js        # Member self-allocation + Task To-Do
+    │   └── reports.js           # CSV export (4 report types)
     └── styles/
         ├── index.css            # Barrel import
         ├── base.css             # Variables, reset, layout, theme
@@ -153,9 +149,8 @@ ba-resource-tracker/
 | `division_settings` | Phases, statuses, skills config per division |
 | `profiles` | Extends `auth.users` — role, display name, division |
 | `members` | BA team members |
-| `cycles` | Time-boxed allocation periods (Siklus Harian) |
 | `projects` | Project tracking with type, phase, status, dates |
-| `project_assignments` | Member ↔ project allocation in blocks (0-4), linked to cycles |
+| `project_assignments` | Member ↔ project allocation (cascade delete) |
 | `project_tasks` | Task to-do items per assignment (cascade delete) |
 | `member_skills` | Skill proficiency per member (cascade delete) |
 | `activity_log` | Audit trail |
